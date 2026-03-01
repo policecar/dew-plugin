@@ -30,7 +30,7 @@ Discover → Design → Demonstrate → Develop → Document → Debrief
 ### Install from GitHub
 
 ```
-/plugin install https://github.com/YOUR_USERNAME/6D-plugin
+/plugin install https://github.com/jkerdels/6D-plugin
 ```
 
 ### Test locally (without installing)

@@ -8,7 +8,7 @@
   },
   "plugins": [
     {
-      "name": "6D",
+      "name": "six-d",
       "source": {
         "source": "github",
         "repo": "jkerdels/6D-plugin"

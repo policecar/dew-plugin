@@ -44,7 +44,7 @@ claude --plugin-dir ./path/to/6D-plugin
 
 ## Usage
 
-All commands can be prefixed with the namespace `/6D:`, but the search in claude code omits this.
+All commands can be prefixed with the namespace `/six-d:`, but the search in claude code omits this.
 
 ### Start a new project
 

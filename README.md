@@ -31,7 +31,7 @@ Discover → Design → Demonstrate → Develop → Document → Debrief
 
 ```
 /plugin marketplace add jkerdels/6D-plugin
-/plugin install 6D@jkerdels
+/plugin install six-d@jkerdels
 ```
 
 ### Test locally (without installing)

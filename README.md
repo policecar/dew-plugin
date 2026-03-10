@@ -1,6 +1,6 @@
 # dew — A Structured Engineering Workflow for Claude Code
 
-**dew** is a Claude Code plugin implementing a rigorous, six-stage software development process. Each stage is an interactive conversation with a specialized AI assistant, producing a concrete artifact that feeds the next stage. The workflow enforces engineering discipline: explicit assumptions, measurable goals, empirical validation before implementation, and structured retrospectives.
+**dew** (formally known as 6D, new name thanks to github.com/policecar ) is a Claude Code plugin implementing a rigorous, six-stage software development process. Each stage is an interactive conversation with a specialized AI assistant, producing a concrete artifact that feeds the next stage. The workflow enforces engineering discipline: explicit assumptions, measurable goals, empirical validation before implementation, and structured retrospectives.
 
 ```
 Discover → Design → Demonstrate → Develop → Document → Debrief

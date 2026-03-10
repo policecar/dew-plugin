@@ -8,10 +8,10 @@
   },
   "plugins": [
     {
-      "name": "six-d",
+      "name": "dew",
       "source": {
         "source": "github",
-        "repo": "jkerdels/6D-plugin"
+        "repo": "jkerdels/dew-plugin"
       },
       "description": "A structured six-stage engineering workflow: Discover → Design → Demonstrate → Develop → Document → Debrief",
       "version": "1.0.1"

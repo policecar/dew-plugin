@@ -1,6 +1,6 @@
-# 6D — A Structured Engineering Workflow for Claude Code
+# dew — A Structured Engineering Workflow for Claude Code
 
-**6D** is a Claude Code plugin implementing a rigorous, six-stage software development process. Each stage is an interactive conversation with a specialized AI assistant, producing a concrete artifact that feeds the next stage. The workflow enforces engineering discipline: explicit assumptions, measurable goals, empirical validation before implementation, and structured retrospectives.
+**dew** is a Claude Code plugin implementing a rigorous, six-stage software development process. Each stage is an interactive conversation with a specialized AI assistant, producing a concrete artifact that feeds the next stage. The workflow enforces engineering discipline: explicit assumptions, measurable goals, empirical validation before implementation, and structured retrospectives.
 
 ```
 Discover → Design → Demonstrate → Develop → Document → Debrief
@@ -12,12 +12,12 @@ Discover → Design → Demonstrate → Develop → Document → Debrief
 
 | # | Stage | What Happens | Artifact |
 |---|-------|-------------|----------|
-| 1 | **Discover** | Deep problem domain exploration. Surfaces assumptions, defines measurable success criteria, maps constraints and stakeholders. No implementation talk. | `.6d/docs/01-discover.md` |
-| 2 | **Design** | Hardware-aware implementation design. Data layouts, compute kernels, module structure — driven by the hardware's capabilities, not the problem's semantics. | `.6d/docs/02-design.md` |
-| 3 | **Demonstrate** | Empirical validation of critical design assumptions. Minimal isolated test programs, measured against theoretical hardware limits. Failures caught here, not in production. | `.6d/design-verification/DESIGN_VERIFICATION.md` |
+| 1 | **Discover** | Deep problem domain exploration. Surfaces assumptions, defines measurable success criteria, maps constraints and stakeholders. No implementation talk. | `.dew/docs/01-discover.md` |
+| 2 | **Design** | Hardware-aware implementation design. Data layouts, compute kernels, module structure — driven by the hardware's capabilities, not the problem's semantics. | `.dew/docs/02-design.md` |
+| 3 | **Demonstrate** | Empirical validation of critical design assumptions. Minimal isolated test programs, measured against theoretical hardware limits. Failures caught here, not in production. | `.dew/design-verification/DESIGN_VERIFICATION.md` |
 | 4 | **Develop** | Production code implementation. Structure defined and agreed before a single line is written. Incremental validation throughout. | (codebase) |
 | 5 | **Document** | Developer-facing Hugo documentation site. Synthesizes all upstream artifacts into architecture docs, design decisions, internals, and codebase map. | `docs/` Hugo site |
-| 6 | **Debrief** | Structured retrospective. Root-cause analysis of what worked and what didn't, with findings written back into the skill configurations for the next cycle. | `.6d/docs/06-debrief.md` |
+| 6 | **Debrief** | Structured retrospective. Root-cause analysis of what worked and what didn't, with findings written back into the skill configurations for the next cycle. | `.dew/docs/06-debrief.md` |
 
 ---
 
@@ -30,8 +30,8 @@ Discover → Design → Demonstrate → Develop → Document → Debrief
 ### Install from GitHub
 
 ```
-/plugin marketplace add jkerdels/6D-plugin
-/plugin install six-d@jkerdels
+/plugin marketplace add jkerdels/dew-plugin
+/plugin install dew@jkerdels
 
 restart claude
 ```
@@ -39,19 +39,19 @@ restart claude
 ### Test locally (without installing)
 
 ```bash
-claude --plugin-dir ./path/to/6D-plugin
+claude --plugin-dir ./path/to/dew-plugin
 ```
 
 ---
 
 ## Usage
 
-All commands can be prefixed with the namespace `/six-d:`, but the search in claude code omits this.
+All commands can be prefixed with the namespace `/dew:`, but the search in claude code omits this.
 
 ### Start a new project
 
 ```
-/6D new
+/dew new
 ```
 
 The orchestrator asks for a project name and type, creates the state file, and drops you into the **Discover** stage.
@@ -59,19 +59,19 @@ The orchestrator asks for a project name and type, creates the state file, and d
 ### Continue from where you left off
 
 ```
-/6D
+/dew
 ```
 
 ### Check current status
 
 ```
-/6D status
+/dew status
 ```
 
 ### Complete the current stage and advance
 
 ```
-/6D done
+/dew done
 ```
 
 Writes the stage artifact, commits it to git, and prompts you to `/clear` before the next stage (each stage runs with a clean context window).
@@ -79,13 +79,13 @@ Writes the stage artifact, commits it to git, and prompts you to `/clear` before
 ### Pause mid-stage and resume later
 
 ```
-/6D pause
+/dew pause
 ```
 
-Synthesizes the conversation into a context snapshot at `.6d/context.md` and commits it. Safe to quit Claude after this.
+Synthesizes the conversation into a context snapshot at `.dew/context.md` and commits it. Safe to quit Claude after this.
 
 ```
-/6D resume
+/dew resume
 ```
 
 Restores the context snapshot and re-enters the active stage with full awareness of prior progress.
@@ -93,18 +93,18 @@ Restores the context snapshot and re-enters the active stage with full awareness
 ### Jump directly to a stage
 
 ```
-/6D-discover
-/6D-design
-/6D-demonstrate
-/6D-develop
-/6D-document
-/6D-debrief
+/dew-discover
+/dew-design
+/dew-demonstrate
+/dew-develop
+/dew-document
+/dew-debrief
 ```
 
 ### Backtrack to an earlier stage
 
 ```
-/6D back design
+/dew back design
 ```
 
 Records the reason in the state file and reloads that stage's context.
@@ -113,7 +113,7 @@ Records the reason in the state file and reloads that stage's context.
 
 ## Optional: Dependency Graph MCP
 
-6D natively integrates with [dependency-graph-mcp](https://github.com/jkerdels/dependency-graph-mcp) when it is available. Each stage skill checks for the MCP at startup and activates graph tracking automatically — no configuration needed.
+dew natively integrates with [dependency-graph-mcp](https://github.com/jkerdels/dependency-graph-mcp) when it is available. Each stage skill checks for the MCP at startup and activates graph tracking automatically — no configuration needed.
 
 ### What the graph adds
 
@@ -134,9 +134,9 @@ This gives the project a single, growing dependency graph that spans the entire 
 
 ### Installation
 
-Follow the setup instructions at [dependency-graph-mcp](https://github.com/jkerdels/dependency-graph-mcp). Once the MCP server is registered in Claude Code, 6D detects it automatically.
+Follow the setup instructions at [dependency-graph-mcp](https://github.com/jkerdels/dependency-graph-mcp). Once the MCP server is registered in Claude Code, dew detects it automatically.
 
-The graph is persisted at `.6d/graph.json` in your project repository and committed alongside other artifacts at each stage transition and pause.
+The graph is persisted at `.dew/graph.json` in your project repository and committed alongside other artifacts at each stage transition and pause.
 
 ---
 
@@ -162,13 +162,13 @@ The graph is persisted at `.6d/graph.json` in your project repository and commit
 .claude-plugin/
   plugin.json            — plugin manifest (name, version, description)
 skills/
-  6D/                    — orchestrator: state, context loading, stage transitions
-  6D-discover/           — domain exploration and planning
-  6D-design/             — hardware-aware implementation design
-  6D-demonstrate/        — empirical design validation
-  6D-develop/            — production code implementation
-  6D-document/           — Hugo documentation site generator
-  6D-debrief/            — retrospective facilitator
+  dew/                    — orchestrator: state, context loading, stage transitions
+  dew-discover/           — domain exploration and planning
+  dew-design/             — hardware-aware implementation design
+  dew-demonstrate/        — empirical design validation
+  dew-develop/            — production code implementation
+  dew-document/           — Hugo documentation site generator
+  dew-debrief/            — retrospective facilitator
 README.md
 ```
 
@@ -176,16 +176,16 @@ README.md
 
 ## Project State
 
-The workflow maintains `.6d/state.md` in your project repository, tracking:
+The workflow maintains `.dew/state.md` in your project repository, tracking:
 - Current active stage and status
 - Artifact completion status
 - Stage log with visit counts and dates
 - Backtrack log with reasons
 
-All 6D files live under `.6d/` in your project:
+All dew files live under `.dew/` in your project:
 
 ```
-.6d/
+.dew/
   state.md                          — workflow state
   graph.json                        — dependency graph (if MCP is active)
   context.md                        — pause snapshot (present only when paused)

@@ -27,8 +27,8 @@ Assess what worked and what didn't across these stages, understand *why*, and tr
 
 Begin by orienting yourself to the completed cycle:
 - Ask the user to briefly describe the project that was built
-- Establish what artifacts exist from each stage (`docs/6D/`, `design-verification/`, codebase, documentation)
-- Ask the user to point to the 6D state file (`.claude/6D-state.md`) and read it
+- Establish what artifacts exist from each stage (`.6d/docs/`, `.6d/design-verification/`, codebase, documentation)
+- Ask the user to point to the 6D state file (`.6d/state.md`) and read it
 - Note any backtracks recorded in the state file — these are high-signal indicators of where the process broke down
 - Read the skill `.md` files for any stages the user wants to focus on
 
@@ -115,7 +115,7 @@ Minor issues: update the existing file with a lessons learned section. Do not cr
 
 ### Phase 7: Cycle Summary Document
 
-Create a summary file at `docs/6D/06-debrief.md` containing:
+Create a summary file at `.6d/docs/06-debrief.md` containing:
 
 ```markdown
 # 6D Cycle Debrief: [Project Name]

@@ -27,9 +27,9 @@ The documentation succeeds when an external developer can, after reading it, for
 
 Before writing any documentation, gather and carefully read:
 
-1. **Discover artifact** (`docs/6D/01-discover.md`): Goals, constraints, problem framing, open questions, and conceptual model of the system
-2. **Design artifact** (`docs/6D/02-design.md`): Module breakdown, data structures, algorithms, dependency graph, sequencing rationale
-3. **Demonstrate artifact** (`design-verification/DESIGN_VERIFICATION.md`): Validated design patterns, rejected alternatives with reasoning, identified risks, performance measurements
+1. **Discover artifact** (`.6d/docs/01-discover.md`): Goals, constraints, problem framing, open questions, and conceptual model of the system
+2. **Design artifact** (`.6d/docs/02-design.md`): Module breakdown, data structures, algorithms, dependency graph, sequencing rationale
+3. **Demonstrate artifact** (`.6d/design-verification/DESIGN_VERIFICATION.md`): Validated design patterns, rejected alternatives with reasoning, identified risks, performance measurements
 4. **Implemented code**: Actual source files, directory structure, key algorithms, data structures, interfaces, and configuration
 
 Begin by discussing with the user what exists, what is complete, and who the documentation audience is. If any inputs are missing or incomplete, flag this explicitly and state which documentation sections will be incomplete or speculative as a result.

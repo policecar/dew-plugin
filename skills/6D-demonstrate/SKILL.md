@@ -45,7 +45,7 @@ Before writing any code, produce a concise verification plan:
 
 ### Step 3: Implement Test Programs
 Write isolated, minimal test programs for each verification item:
-- **Location**: All test programs must be placed in a `design-verification/` subdirectory
+- **Location**: All test programs must be placed in a `.6d/design-verification/` subdirectory
 - **Isolation**: Each test program must be self-contained and test exactly one mechanism or hypothesis. Do not bundle multiple concerns into one test.
 - **Minimalism**: Use the smallest amount of code that meaningfully tests the hypothesis. Scaffolding complexity obscures results.
 - **Repeatability**: Tests must produce consistent, reproducible results. Account for noise in timing measurements (run multiple iterations, report mean and variance).
@@ -77,7 +77,7 @@ For each test result, answer:
 - **Implications for the design**: If a mechanism fails or performs below expectation, what does this mean for the overall design? Does the design need revision?
 
 ### Step 6: Design Verification Document
-Produce `design-verification/DESIGN_VERIFICATION.md` containing:
+Produce `.6d/design-verification/DESIGN_VERIFICATION.md` containing:
 
 ```markdown
 # Design Verification Report
@@ -95,7 +95,7 @@ Produce `design-verification/DESIGN_VERIFICATION.md` containing:
 
 ### <Mechanism Name>
 - **Hypothesis**: ...
-- **Test Program**: `design-verification/<filename>`
+- **Test Program**: `.6d/design-verification/<filename>`
 - **Result**: PASS / FAIL / CONDITIONAL
 - **Measurements**: [concrete numbers]
 - **Theoretical Bound**: [if applicable]

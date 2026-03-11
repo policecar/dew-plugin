@@ -77,6 +77,7 @@ For each test result, answer:
 - **What assumptions does this result depend on?** (hardware, OS, compiler flags, data distribution, etc.)
 - **When does it fail?** Probe edge cases, boundary conditions, degenerate inputs
 - **Implications for the design**: If a mechanism fails or performs below expectation, what does this mean for the overall design? Does the design need revision?
+- **Platform scope**: If the test was run on only one target platform, state this explicitly. Name any documented platform-specific constraints (e.g., thread ownership requirements for windowing libraries on macOS) that the test could not verify, and mark them as assumed-unverified in the DVD's Risk Assessment.
 
 ### Step 6: Design Verification Document
 Produce `.dew/design-verification/DESIGN_VERIFICATION.md` containing:
@@ -244,3 +245,5 @@ Use `dag_next` to get the next actionable sub-task. Work through it in the conve
 **Open Questions:**
 
 - Whether the skill should have a formal "nothing to verify" exit path that produces a minimal Design Verification Document explaining why, or whether a conversational recommendation to skip is sufficient. Needs observation.
+
+- **Model selection matters for this stage**: Opus 4.6 exhibits strong "theatrical performance" tendencies — it invents verification items to signal thoroughness rather than staying anchored to the IDD. Opus itself described this as an artifact of overperformance training. Sonnet 4.6 is more task-focused and stays on the work at hand. The citation discipline rule (Finding 2 above) partially mitigates this at the prompt level, but model personality is an independent variable. Sonnet 4.6 is the recommended model for the Demonstrate stage.

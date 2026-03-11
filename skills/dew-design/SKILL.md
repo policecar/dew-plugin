@@ -87,6 +87,7 @@ Fill in remaining details:
 
 - Specific algorithms and their justification.
 - External dependencies: libraries, formats, protocols. For each: what is the documented API contract? What behavior are we assuming beyond the contract? Flag any library-internal behavior assumptions as unverified — these must be marked for Demonstrate-stage verification.
+- **Cross-platform constraint check**: If cross-platform support is a stated requirement, for each library verify that the usage pattern, threading model, and API calls satisfy the documented platform-specific constraints on **all** target platforms. Do not assume that behavior validated on the development platform generalizes. A common failure mode: windowing and GUI libraries (SDL, GLFW, Cocoa, etc.) mandate main-thread ownership on macOS even when no such constraint exists on Linux. Check every target platform's documented requirements explicitly.
 - **All numerical constants must be pinned.** Every constant — from literature, derived analytically, or estimated — must have a committed value. "TBD" is a blocking open item. If a constant cannot be pinned, that signals additional research is needed *now*, not during Demonstrate.
 - Build structure: targets, include paths, dependency management.
 - Programming Language feature usage: which language features are used and why, considering the project's audience and design perspectives.

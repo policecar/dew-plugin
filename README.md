@@ -2,13 +2,16 @@
 
 **dew** (formally known as 6D, new name thanks to [github.com/policecar](https://github.com/policecar) ) is a Claude Code plugin implementing a rigorous, six-stage software development process. Each stage is an interactive conversation with a specialized AI assistant, producing a concrete artifact that feeds the next stage. The workflow enforces engineering discipline: explicit assumptions, measurable goals, empirical validation before implementation, and structured retrospectives.
 
+dew offers two workflows depending on task size:
+
 ```
-Discover → Design → Demonstrate → Develop → Document → Debrief
+Full:  Discover → Design → Demonstrate → Develop → Document → Debrief
+Fast:  Plan → Build → Verify
 ```
 
 ---
 
-## The Six Stages
+## The Six Stages (Full Workflow)
 
 | # | Stage | What Happens | Artifact |
 |---|-------|-------------|----------|
@@ -18,6 +21,18 @@ Discover → Design → Demonstrate → Develop → Document → Debrief
 | 4 | **Develop** | Production code implementation. Structure defined and agreed before a single line is written. Incremental validation throughout. | (codebase) |
 | 5 | **Document** | Developer-facing Hugo documentation site. Synthesizes all upstream artifacts into architecture docs, design decisions, internals, and codebase map. | `docs/` Hugo site |
 | 6 | **Debrief** | Structured retrospective. Root-cause analysis of what worked and what didn't, with findings written back into the skill configurations for the next cycle. | `.dew/docs/06-debrief.md` |
+
+---
+
+## The Three Stages (Fast Workflow)
+
+The fast workflow is suited for well-scoped tasks where requirements and approach are reasonably clear. It compresses the six stages into three, trading thoroughness for speed. The same engineering discipline applies — explicit assumptions, measurable criteria, honest retrospectives — just at a lower overhead.
+
+| # | Stage | What Happens | Artifact |
+|---|-------|-------------|----------|
+| 1 | **Plan** | Combined problem framing and implementation design. What to build, why, and how — in one flowing conversation. Surfaces key assumptions and defines concrete acceptance tests. | `.dew/docs/fast-plan.md` |
+| 2 | **Build** | Implementation, with optional pre-implementation validation only if genuine blockers exist. Concrete structure defined and agreed before coding begins. | (codebase) |
+| 3 | **Verify** | Acceptance test execution, edge case probing, targeted doc updates, and a brief retrospective. | `.dew/docs/fast-debrief.md` |
 
 ---
 
@@ -54,7 +69,7 @@ All commands can be prefixed with the namespace `/dew:`, but the search in claud
 /dew new
 ```
 
-The orchestrator asks for a project name and type, creates the state file, and drops you into the **Discover** stage.
+The orchestrator asks for a project name, type, and whether to use the **full** (6-stage) or **fast** (3-stage) workflow, then creates the state file and drops you into the first stage.
 
 ### Continue from where you left off
 
@@ -99,6 +114,7 @@ Restores the context snapshot and re-enters the active stage with full awareness
 /dew-develop
 /dew-document
 /dew-debrief
+/dew-fast
 ```
 
 ### Backtrack to an earlier stage
@@ -162,13 +178,14 @@ The graph is persisted at `.dew/graph.json` in your project repository and commi
 .claude-plugin/
   plugin.json            — plugin manifest (name, version, description)
 skills/
-  dew/                    — orchestrator: state, context loading, stage transitions
+  dew/                    — orchestrator: state, context loading, stage transitions (full + fast)
   dew-discover/           — domain exploration and planning
   dew-design/             — hardware-aware implementation design
   dew-demonstrate/        — empirical design validation
   dew-develop/            — production code implementation
   dew-document/           — Hugo documentation site generator
   dew-debrief/            — retrospective facilitator
+  dew-fast/               — fast workflow: Plan + Build + Verify in one skill
 README.md
 ```
 
@@ -186,13 +203,15 @@ All dew files live under `.dew/` in your project:
 
 ```
 .dew/
-  state.md                          — workflow state
+  state.md                          — workflow state (full or fast)
   graph.json                        — dependency graph (if MCP is active)
   context.md                        — pause snapshot (present only when paused)
   docs/
-    01-discover.md
-    02-design.md
-    06-debrief.md
+    01-discover.md                  — full workflow
+    02-design.md                    — full workflow
+    06-debrief.md                   — full workflow
+    fast-plan.md                    — fast workflow
+    fast-debrief.md                 — fast workflow
   design-verification/
     DESIGN_VERIFICATION.md
     <test programs>

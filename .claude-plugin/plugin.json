@@ -1,7 +1,7 @@
 {
   "name": "dew",
-  "description": "A structured six-stage engineering workflow: Discover → Design → Demonstrate → Develop → Document → Debrief",
-  "version": "1.2.0",
+  "description": "A structured engineering workflow: full six-stage (Discover → Design → Demonstrate → Develop → Document → Debrief) or fast three-stage (Plan → Build → Verify)",
+  "version": "1.3.0",
   "author": {
     "name": "jkerdels"
   },

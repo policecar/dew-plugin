@@ -1,11 +1,13 @@
 ---
 name: dew
-description: dew workflow orchestrator. Manages the six-stage development process (Discover → Design → Demonstrate → Develop → Document → Debrief), tracking state, loading artifact context, invoking stage skills, and maintaining git history at stage boundaries.
+description: dew workflow orchestrator. Manages the full six-stage process (Discover → Design → Demonstrate → Develop → Document → Debrief) and the fast three-stage process (Plan → Build → Verify), tracking state, loading artifact context, invoking stage skills, and maintaining git history at stage boundaries.
 ---
 
 # dew Workflow Orchestrator
 
 **dew** is a structured engineering process for building software with rigor and measurability. Every stage is an interactive conversation — this orchestrator loads context and hands off to the appropriate stage skill, which runs directly in the current session.
+
+*Full workflow (6 stages):*
 
 | Stage | Plugin | Skill | Artifact |
 |-------|--------|-------|----------|
@@ -16,6 +18,14 @@ description: dew workflow orchestrator. Manages the six-stage development proces
 | **Document** | dew | `/dew-document` | `docs/` Hugo site |
 | **Debrief** | dew | `/dew-debrief` | `.dew/docs/06-debrief.md` |
 
+*Fast workflow (3 stages):*
+
+| Stage | Plugin | Skill | Artifact |
+|-------|--------|-------|----------|
+| **Plan** | dew | `/dew-fast` | `.dew/docs/fast-plan.md` |
+| **Build** | dew | `/dew-fast` | production code in repo |
+| **Verify** | dew | `/dew-fast` | `.dew/docs/fast-debrief.md` |
+
 **Commands:**
 - `/dew` — continue from the current active stage
 - `/dew new` — start a new dew project
@@ -24,7 +34,7 @@ description: dew workflow orchestrator. Manages the six-stage development proces
 - `/dew resume` — restore context from `.dew/context.md` and re-enter the active stage
 - `/dew status` — show current state without entering a stage
 - `/dew back <stage>` — backtrack to an earlier stage
-- `/dew-<stage-name>` — jump to a named stage (dew-discover / dew-design / dew-demonstrate / dew-develop / dew-document / dew-debrief)
+- `/dew-<stage-name>` — jump to a named stage (dew-discover / dew-design / dew-demonstrate / dew-develop / dew-document / dew-debrief / dew-fast)
 
 **Command presentation**: When showing any command to the user, always use the short form without the `dew:` namespace prefix (e.g., `/dew done`, NEVER(!) `/dew:dew done`). The namespace prefix is an internal Claude Code routing detail and must not be shown to users.
 
@@ -64,15 +74,16 @@ Arguments provided: `$ARGUMENTS`
 1. Ask the user:
    - "What are we building? Give it a short slug-friendly name (e.g., `retina-pipeline`, `auth-system`)."
    - "Is this a **new project**, a **major new feature** in an existing codebase, or a **revisit/fix** of something in progress?"
+   - "**Full workflow** (6 stages: Discover → Design → Demonstrate → Develop → Document → Debrief) or **Fast workflow** (3 stages: Plan → Build → Verify)? The fast workflow suits well-scoped tasks where the requirements and approach are fairly clear. The full workflow suits larger or more complex projects where thorough exploration and empirical validation are worth the investment."
 
 2. Run `mkdir -p .dew/docs` to create the artifact directory.
 
-3. Write `.dew/state.md` using the State File Format at the bottom of this file.
+3. Write `.dew/state.md` using the appropriate State File Format at the bottom of this file (full or fast).
 
 4. If in a git repo, commit the state file:
    - Message: `dew(init): begin dew for <project-name>`
 
-5. Set active stage to `discover` and enter the stage (Step 3).
+5. Set active stage to `discover` (full workflow) or `plan` (fast workflow) and enter the stage (Step 3).
 
 ---
 
@@ -82,12 +93,18 @@ Read the `Active Stage` from the save state. Load context for the stage (read an
 
 **Context loading per stage:**
 
+*Full workflow:*
 - **discover**: No prior artifacts. If revisit, read `.dew/docs/01-discover.md` and summarize what changed.
 - **design**: Read `.dew/docs/01-discover.md` and present its contents to establish context before invoking the skill.
 - **demonstrate**: Read `.dew/docs/02-design.md` and present its contents before invoking the skill.
 - **develop**: Read `.dew/docs/02-design.md` and `.dew/design-verification/DESIGN_VERIFICATION.md` and present both before invoking the skill.
 - **document**: Read `.dew/docs/01-discover.md`, `.dew/docs/02-design.md`, and `.dew/design-verification/DESIGN_VERIFICATION.md` and present all three before invoking the skill.
 - **debrief**: Read `.dew/state.md` (full contents including backtrack log) and present it before invoking the skill.
+
+*Fast workflow:*
+- **plan**: No prior artifacts. If revisit, read `.dew/docs/fast-plan.md` and summarize what changed.
+- **build**: Read `.dew/docs/fast-plan.md` and present its contents before invoking the skill.
+- **verify**: Read `.dew/docs/fast-plan.md` and present its contents before invoking the skill.
 
 If the `mcp__dependency-graph__dag_status` tool is available, also call `dag_status` after loading artifacts to show a brief project graph summary (what's done, what's pending across all stage namespaces). This gives the user and the stage skill an instant orientation on overall progress.
 
@@ -97,12 +114,19 @@ If the `mcp__dependency-graph__dag_status` tool is available, also call `dag_sta
 - That you are now invoking the stage skill
 
 Then invoke the stage skill via the Skill tool:
+
+*Full workflow:*
 - discover → `Skill("dew:dew-discover")`
 - design → `Skill("dew:dew-design")`
 - demonstrate → `Skill("dew:dew-demonstrate")`
 - develop → `Skill("dew:dew-develop")`
 - document → `Skill("dew:dew-document")`
 - debrief → `Skill("dew:dew-debrief")`
+
+*Fast workflow:*
+- plan → `Skill("dew:dew-fast")`
+- build → `Skill("dew:dew-fast")`
+- verify → `Skill("dew:dew-fast")`
 
 **If this is a revisit** (backtrack log is non-empty for this stage), prepend a brief summary of why we are back here before invoking the skill, so the stage skill has the backtrack context.
 
@@ -113,6 +137,8 @@ Then invoke the stage skill via the Skill tool:
 When the user invokes `/dew done`:
 
 1. **Write the stage artifact** by synthesizing the conversation:
+
+   *Full workflow:*
    - discover → write `.dew/docs/01-discover.md`
    - design → write `.dew/docs/02-design.md`
    - demonstrate → finalize `.dew/design-verification/DESIGN_VERIFICATION.md` (test programs were written during the stage)
@@ -120,9 +146,16 @@ When the user invokes `/dew done`:
    - document → finalize the Hugo site files
    - debrief → write `.dew/docs/06-debrief.md`
 
+   *Fast workflow:*
+   - plan → write `.dew/docs/fast-plan.md`
+   - build → no additional artifact; code is already in the repo
+   - verify → write `.dew/docs/fast-debrief.md`
+
 2. **Update `.dew/state.md`**:
    - Mark the completed stage with today's date
-   - Advance `Active Stage` to the next stage (or `complete` if debrief is done)
+   - Advance `Active Stage` to the next stage:
+     - Full workflow: discover→design→demonstrate→develop→document→debrief→complete
+     - Fast workflow: plan→build→verify→complete
    - Mark the artifact as complete in the Artifacts table
 
 3. **Git commit** (if in a git repo):
@@ -212,8 +245,9 @@ When the user invokes `/dew resume`:
 
 When `/dew status` is invoked:
 
+*Full workflow example:*
 ```
-dew: <project-name> (<type>)
+dew: <project-name> (<type>)  [full]
 ─────────────────────────────────────────
   [✓] Discover      completed <date>
   [✓] Design        completed <date>
@@ -229,11 +263,27 @@ Artifacts:
   .dew/design-verification/DESIGN_VERIFICATION.md   in progress
 ```
 
+*Fast workflow example:*
+```
+dew: <project-name> (<type>)  [fast]
+─────────────────────────────────────────
+  [✓] Plan          completed <date>
+  [→] Build         in progress
+  [ ] Verify        pending
+
+Backtracks:  0
+Artifacts:
+  .dew/docs/fast-plan.md                 ✓
+  (codebase)                             in progress
+```
+
 Then stop — do not invoke any stage skill.
 
 ---
 
 ## State File Format
+
+### Full Workflow
 
 `.dew/state.md`:
 
@@ -242,6 +292,7 @@ Then stop — do not invoke any stage skill.
 
 ## Project
 - **Name**: <project-name>
+- **Workflow**: full
 - **Type**: new-project | major-feature | revisit-fix
 - **Started**: <ISO date>
 - **Last Updated**: <ISO date>
@@ -269,6 +320,43 @@ Then stop — do not invoke any stage skill.
 | develop | — | — | 0 | |
 | document | — | — | 0 | |
 | debrief | — | — | 0 | |
+
+## Backtrack Log
+<!-- Format: | <date> | from: <stage> → to: <stage> | reason: <why> | resolved: yes/no | -->
+(none yet)
+```
+
+### Fast Workflow
+
+`.dew/state.md`:
+
+```markdown
+# dew Save State
+
+## Project
+- **Name**: <project-name>
+- **Workflow**: fast
+- **Type**: new-project | major-feature | revisit-fix
+- **Started**: <ISO date>
+- **Last Updated**: <ISO date>
+
+## Active Stage
+**Stage**: plan | build | verify | complete
+**Status**: in-progress | complete
+
+## Artifacts
+| Artifact | Path | Status |
+|----------|------|--------|
+| Plan | .dew/docs/fast-plan.md | pending |
+| Build | (codebase) | pending |
+| Verify | .dew/docs/fast-debrief.md | pending |
+
+## Stage Log
+| Stage | Started | Completed | Visits | Notes |
+|-------|---------|-----------|--------|-------|
+| plan | — | — | 0 | |
+| build | — | — | 0 | |
+| verify | — | — | 0 | |
 
 ## Backtrack Log
 <!-- Format: | <date> | from: <stage> → to: <stage> | reason: <why> | resolved: yes/no | -->

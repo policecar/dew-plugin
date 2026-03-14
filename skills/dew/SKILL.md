@@ -73,8 +73,10 @@ hooks:
 - `/dew pause` — snapshot conversation context to `.dew/context.md`, commit, safe to quit
 - `/dew resume` — restore context from `.dew/context.md` and re-enter the active stage
 - `/dew status` — show current state without entering a stage
+- `/dew auto` — autonomous full workflow using an agent team (Opus + Sonnet + Haiku)
+- `/dew auto fast` — autonomous fast workflow using an agent team
 - `/dew back <stage>` — backtrack to an earlier stage
-- `/dew-<stage-name>` — jump to a named stage (dew-discover / dew-design / dew-demonstrate / dew-develop / dew-document / dew-debrief / dew-fast)
+- `/dew-<stage-name>` — jump to a named stage (dew-discover / dew-design / dew-demonstrate / dew-develop / dew-document / dew-debrief / dew-fast / dew-auto)
 
 **Command presentation**: When showing any command to the user, always use the short form without the `dew:` namespace prefix (e.g., `/dew done`, NEVER(!) `/dew:dew done`). The namespace prefix is an internal Claude Code routing detail and must not be shown to users.
 
@@ -98,6 +100,7 @@ Arguments provided: `$ARGUMENTS`
 
 | Condition | Action |
 |-----------|--------|
+| ARGUMENTS starts with `auto` | → **Auto mode**: invoke `Skill("dew:dew-auto")` passing the remaining arguments (e.g., `fast`). Then **stop** — the auto skill handles everything. |
 | State is "none" **or** ARGUMENTS contains `new` | → **Initialize** a new project (Step 2) |
 | ARGUMENTS is `done` | → **Complete** the current stage (Step 4) |
 | ARGUMENTS is `pause` | → **Pause** the current stage (Pause Protocol) |

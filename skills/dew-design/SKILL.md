@@ -143,6 +143,47 @@ When the document is complete, the user will invoke `/dew done` to trigger artif
 
 ---
 
+## Quality Requirements Document
+
+**Additionally**, when the IDD is complete, produce `.dew/metacog/quality-requirements.md`. Run `mkdir -p .dew/metacog` first. This document is the universal quality context injected into every Context Creator Agent (CCA) invocation during the Demonstrate and Develop stages — it must be specific to this project, not generic boilerplate.
+
+```markdown
+# Quality Requirements & Project Context
+
+**Project**: <project-name>
+**IDD Reference**: `.dew/docs/02-design.md`
+
+## Overall Goal
+[2–3 sentences: what does success look like at the project level? What problem does this solve and for whom?]
+
+## Scope Boundaries
+- **In scope**: [...]
+- **Out of scope**: [...]
+
+## Architectural Invariants
+[Constraints every implementation or verification node must respect — naming conventions, interface contracts, module boundaries, threading model, memory ownership rules, etc. Be specific enough that a worker agent can check compliance.]
+
+## Quality Standards
+[Derived from the negotiated design perspectives in Phase 2. For each quality dimension that ranked in the top-3: define what "meets the standard" means concretely. E.g., "Performance: all hot-path functions must avoid heap allocation." "Correctness: all public functions must assert their preconditions."]
+
+## Verification Standards
+[For demonstrate-type nodes: test programs go in `.dew/design-verification/`. Each must include the standard header block (VERIFICATION TARGET, HYPOTHESIS, PASS CRITERION, DESIGN DOCUMENT REF). Tests must be self-contained and measure concrete quantities — no subjective assessments.]
+
+## Implementation Standards
+[For develop-type nodes: coding conventions, structural requirements, assertion policy, error handling contract — as agreed during Phase 2 and reflected in the IDD.]
+
+## Engineering Principles (Condensed)
+- State every assumption explicitly before it matters.
+- "It works" is not a result. A concrete measurement with a margin is a result.
+- Slim margins are red flags — a system that passes at 98% under ideal conditions is a liability, not a validated design.
+- Know when the system fails, not just when it succeeds.
+- Simple is a first-class constraint. Complexity must justify itself.
+- If you cannot define a success metric, the task is not yet understood well enough to attempt.
+```
+
+Populate every section with content specific to this project. Do not leave placeholder text.
+
+---
 
 ## DAG Integration
 
@@ -188,7 +229,7 @@ During Phase 6, when you flag a library-behavior assumption (a dependency whose 
 - **ID**: `demonstrate.<behavior-slug>`
 - **Task**: `"Validate library behavior: <specific behavior assumed>"`
 - **Priority**: 8 (these are pre-implementation blockers)
-- **Context**: The exact API call or behavior assumed, the section of the IDD that depends on it, and what a passing test looks like
+- **Context**: The exact API call or behavior assumed, the section of the IDD that depends on it, what a passing test looks like, and a one-sentence pass criterion. The CCA will use this context — make it self-contained.
 
 If a `demonstrate.*` node for the same concern was already created by Discover, append to it via `dag_log` rather than creating a duplicate.
 
@@ -199,7 +240,7 @@ After Phase 7 (Implementation Plan), create one `develop.*` node per implementat
 - **ID**: `develop.<component-slug>`
 - **Task**: `"Implement: <component description>"`
 - **Priority**: Reflect the implementation order — first steps higher (e.g., 8), later steps lower (e.g., 4)
-- **Context**: The relevant IDD section, expected inputs/outputs, module boundaries, and any design constraints on this component
+- **Context**: The relevant IDD section, expected inputs/outputs, module boundaries, and any design constraints on this component. Include a one-sentence acceptance criterion (what "done" looks like for this component). The CCA will use this context — make it self-contained.
 
 Wire inter-component dependencies if the plan specifies ordering: if component B cannot begin until component A is done, add that dependency via `dag_add_dependency`.
 

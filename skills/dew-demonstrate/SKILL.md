@@ -220,9 +220,26 @@ When DAG is active, each seed node's `dag_done` summary already records the outc
 - **Summary section** and **Risk Assessment** remain full — these are synthesized judgements not captured by individual node outcomes.
 - **Recommendations** remain full — these are forward-looking and not captured by the graph.
 
-### Driving Work
+### Driving Work with the Context Creator Agent (CCA)
 
-Use `dag_next` to get the next actionable sub-task. Work through it in the conversation, then call `dag_done(id, summary)`. When all sub-tasks for a seed are done, mark the seed itself done with: PASS/FAIL/CONDITIONAL + key measurement + design implication.
+After seed expansion is complete, do not work on nodes directly. Drive progress through the Context Creator Agent — a fresh subagent spawned per node that crafts focused worker prompts, reviews results, and manages decomposition or predecessor correction as needed.
+
+1. Call `dag_next` to get the next actionable sub-task. Note the node ID.
+2. Spawn a fresh CCA subagent via the Agent tool:
+   ```
+   Agent(
+     description="CCA for [node-id]",
+     prompt="Read skills/dew-metacog/SKILL.md (your full instructions). Node ID: [node-id]. DAG path: .dew/graph.json. Quality context: .dew/metacog/quality-requirements.md. CCA log: .dew/metacog/cca-log.md.",
+     subagent_type="general-purpose"
+   )
+   ```
+3. Wait for the CCA subagent to complete.
+4. Call `dag_status` to see what changed — nodes may have been completed, decomposed, or predecessors reopened.
+5. Return to step 1. Continue until `dag_next` returns nothing actionable.
+
+When all seed nodes and their sub-tasks are done, proceed to produce the Design Verification Document.
+
+**If the CCA escalated** (left a node with an escalation log entry and did not mark it done): surface the escalation message to the user. Do not attempt to override the CCA's decision — treat it as a blocking issue requiring human judgement before proceeding.
 
 ---
 

@@ -292,6 +292,26 @@ Wire: `fast.plan.artifact` depends on `fast.plan.discuss`.
 ```
 Wire: each node depends on the previous.
 
+**Driving the Build with the Context Creator Agent (CCA)**
+
+After `fast.build.structure` is done and the user has confirmed the structure (Step 3), drive `fast.build.implement` through the Context Creator Agent rather than implementing directly:
+
+1. Once `fast.build.implement` is actionable, spawn a fresh CCA subagent:
+   ```
+   Agent(
+     description="CCA for fast.build.implement",
+     prompt="Read skills/dew-metacog/SKILL.md (your full instructions). Node ID: fast.build.implement. DAG path: .dew/graph.json. Quality context: .dew/docs/fast-plan.md. CCA log: .dew/metacog/cca-log.md.",
+     subagent_type="general-purpose"
+   )
+   ```
+   Note: `fast-plan.md` serves as the quality context document for the fast workflow. Create `.dew/metacog/` if it does not exist.
+2. Wait for the CCA to complete. The CCA may decompose `fast.build.implement` into sub-nodes if the implementation scope is too broad — this is expected and correct.
+3. Call `dag_status` to see what changed.
+4. If the CCA decomposed the node, continue calling `dag_next` and spawning CCA subagents until no actionable nodes remain.
+5. Proceed to `fast.build.summary` (Step 5) once all implementation nodes are done.
+
+**If the CCA escalated**: surface the escalation to the user before proceeding.
+
 **Phase 3 — Verify:**
 ```json
 [

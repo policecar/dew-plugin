@@ -140,7 +140,7 @@ When the user invokes `/dew done`:
 
    *Full workflow:*
    - discover → write `.dew/docs/01-discover.md`
-   - design → write `.dew/docs/02-design.md`
+   - design → write `.dew/docs/02-design.md` and `.dew/metacog/quality-requirements.md` (create `.dew/metacog/` if needed)
    - demonstrate → finalize `.dew/design-verification/DESIGN_VERIFICATION.md` (test programs were written during the stage)
    - develop → no additional artifact; code is already in the repo
    - document → finalize the Hugo site files
@@ -159,7 +159,7 @@ When the user invokes `/dew done`:
    - Mark the artifact as complete in the Artifacts table
 
 3. **Git commit** (if in a git repo):
-   - Stage `.dew/state.md`, `.dew/graph.json` (if it exists), and any new/changed files in `.dew/docs/` or `.dew/design-verification/`
+   - Stage `.dew/state.md`, `.dew/graph.json` (if it exists), and any new/changed files in `.dew/docs/`, `.dew/metacog/`, or `.dew/design-verification/`
    - Message: `dew(<stage>): complete <stage-name> for <project-name>`
    - Example: `dew(discover): complete discovery for retina-pipeline`
    - Do **not** push unless explicitly asked

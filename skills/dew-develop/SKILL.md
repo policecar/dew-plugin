@@ -133,9 +133,26 @@ When DAG is active, the `dag_done` summaries on each `develop.<component>` node 
 - **Part 4** (Key design decisions): replace with a reference table (component node ID | decision | brief rationale) drawn from the `dag_done` summaries rather than re-narrating in prose.
 - **Parts 3, 5, and 6** (Control flow walkthrough, what you're proud of, known limitations) remain full — these are synthesized judgements not captured by individual node outcomes and are the highest-value parts of the summary.
 
-### Driving Implementation
+### Driving Implementation with the Context Creator Agent (CCA)
 
-Use `dag_next` to determine which component to work on next — the graph's priority and dependency structure reflects the implementation order agreed in the IDD. Mark nodes done with concrete summaries: what was built, key decisions made, any deviations from the IDD.
+After seed expansion is complete, do not implement components directly. Drive implementation through the Context Creator Agent — a fresh subagent spawned per node that crafts focused worker prompts, reviews results, and manages decomposition or predecessor correction as needed.
+
+1. Call `dag_next` to get the next actionable sub-task. Note the node ID.
+2. Spawn a fresh CCA subagent via the Agent tool:
+   ```
+   Agent(
+     description="CCA for [node-id]",
+     prompt="Read skills/dew-metacog/SKILL.md (your full instructions). Node ID: [node-id]. DAG path: .dew/graph.json. Quality context: .dew/metacog/quality-requirements.md. CCA log: .dew/metacog/cca-log.md.",
+     subagent_type="general-purpose"
+   )
+   ```
+3. Wait for the CCA subagent to complete.
+4. Call `dag_status` to see what changed — nodes may have been completed, decomposed, or predecessors reopened.
+5. Return to step 1. Continue until `dag_next` returns nothing actionable.
+
+When all seed nodes and their sub-tasks are done, proceed to the implementation summary (Phase 4).
+
+**If the CCA escalated** (left a node with an escalation log entry and did not mark it done): surface the escalation message to the user. Do not attempt to override the CCA's decision — treat it as a blocking issue requiring human judgement before proceeding.
 
 ---
 

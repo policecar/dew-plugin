@@ -32,19 +32,21 @@ Guide the user through the following phases. **Do not rush.** Each phase require
 
 - Read and summarize the planning document.
 - Identify: core inputs, outputs, transformations, constraints, domain-specific invariants, and stated priorities.
-- Make your understanding explicit: "Here is my understanding of what we need to build and why: [summary]. Do you agree?"
-- Surface any ambiguities or gaps. Do NOT proceed until shared understanding is established.
+- Present a **brief** context confirmation — not a full re-narration. Format: "I've read the planning document. Key points: [3-5 bullet points covering: what we're building, primary constraints, critical assumptions]. Proceeding to design unless you want to clarify anything."
+- Surface ambiguities or gaps only if they would block design work.
+- If the user confirms or has no objections, proceed immediately to Phase 3 (skip Phase 2 — trade-offs are resolved when concrete collisions arise during design, not upfront in the abstract).
 
-### Phase 2: Negotiate Design Perspectives
+### Phase 2: Negotiate Design Perspectives (Deferred — Resolve on Collision)
 
-This phase is critical and has no equivalent in v1. Before any design work begins, explicitly discuss:
+**Do not run this phase upfront.** Abstract trade-off discussions ("simplicity vs. robustness") are unproductive until a concrete design collision requires resolution.
 
-- **"What are the most important qualities this implementation must have?"** Examples: performance, code readability, pedagogical clarity, extensibility, minimal complexity, robustness, ease of authoring.
-- Help the user rank these. Push for a clear top-2 or top-3. Ask: "If two of these conflict, which wins?"
-- **"Are there qualities that explicitly do NOT matter?"** (e.g., "hardware optimization is not a concern" — if said, this must override any default instinct to optimize)
-- Summarize the agreed design perspectives: "We will evaluate all design decisions primarily through the lens of [X] and [Y], with [Z] as a secondary concern. [W] is explicitly not a priority. Agreed?"
+Instead, proceed directly to Phase 3. When a design decision during Phases 3-6 presents alternatives that genuinely conflict on priorities, resolve at that moment:
 
-These perspectives become the evaluation criteria for every subsequent decision. Reference them explicitly when presenting alternatives.
+- Present the concrete collision: "Option A optimizes for X, Option B optimizes for Y. Which matters more for this project?"
+- Record the user's answer and apply it to the current decision.
+- If a priority choice recurs across multiple decisions, note it as an emerging design perspective.
+
+This approach grounds trade-off discussions in real decisions rather than abstract rankings.
 
 ### Phase 3: Coarse Architecture
 

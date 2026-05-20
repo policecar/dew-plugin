@@ -48,6 +48,10 @@ description: dew workflow orchestrator. Manages the full six-stage process (Disc
 
 !`git status --short 2>/dev/null || echo "(not a git repository — commits will be skipped)"`
 
+## Commit Mode
+
+!`grep -qE '^\.dew/?$|^/\.dew/?$' .gitignore 2>/dev/null && echo "COMMIT_MODE: skip — .dew is gitignored (artifacts are ephemeral)" || git rev-parse --git-dir >/dev/null 2>&1 && echo "COMMIT_MODE: enabled — .dew artifacts will be committed at stage boundaries" || echo "COMMIT_MODE: skip — not a git repository"`
+
 ## Worktree Policy
 
 Work in a git worktree during dew cycles — never commit dew work directly on main. Create worktrees at `<repo>/.worktrees/<project-name>` (e.g., `.worktrees/retina-pipeline`). This keeps worktrees visible at the repo root and separates feature work from the main branch.
@@ -90,7 +94,7 @@ Arguments provided: `$ARGUMENTS`
 
 4. Write `.dew/state.md` using the appropriate State File Format at the bottom of this file (full or fast).
 
-5. If in a git repo, commit the state file:
+5. **Commit** (if COMMIT_MODE is enabled):
    - Message: `dew(init): begin dew for <project-name>`
 
 6. Set active stage to `discover` (full workflow) or `plan` (fast workflow) and enter the stage (Step 3).
@@ -168,7 +172,7 @@ When the user invokes `/dew done`:
      - Fast workflow: plan→build→verify→complete
    - Mark the artifact as complete in the Artifacts table
 
-3. **Git commit** (if in a git repo):
+3. **Commit** (if COMMIT_MODE is enabled):
    - Stage `.dew/state.md`, `.dew/graph.json` (if it exists), and any new/changed files in `.dew/docs/` or `.dew/design-verification/`
    - Message: `dew(<stage>): complete <stage-name> for <project-name>`
    - Example: `dew(discover): complete discovery for retina-pipeline`
@@ -193,7 +197,7 @@ When the user invokes `/dew back <stage>`:
    - Set `Active Stage` to the target stage
    - Mark all intermediate stages as `needs-revisit`
 
-3. Commit the state update:
+3. **Commit** (if COMMIT_MODE is enabled):
    - Message: `dew(backtrack): return to <stage> — <brief reason>`
 
 4. Enter the stage (Step 3) with the backtrack context loaded.
@@ -225,7 +229,7 @@ When the user invokes `/dew pause`:
 <What should happen when work resumes — the immediate next action or question to address.>
 ```
 
-2. **Git commit** (if in a git repo):
+2. **Commit** (if COMMIT_MODE is enabled):
    - Stage `.dew/context.md` and `.dew/graph.json` (if it exists)
    - Message: `dew(pause): <stage> for <project-name>`
 

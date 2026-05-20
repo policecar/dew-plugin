@@ -80,14 +80,20 @@ Arguments provided: `$ARGUMENTS`
    - "Is this a **new project**, a **major new feature** in an existing codebase, or a **revisit/fix** of something in progress?"
    - "**Full workflow** (6 stages: Discover → Design → Demonstrate → Develop → Document → Debrief) or **Fast workflow** (3 stages: Plan → Build → Verify)? The fast workflow suits well-scoped tasks where the requirements and approach are fairly clear. The full workflow suits larger or more complex projects where thorough exploration and empirical validation are worth the investment."
 
-2. Run `mkdir -p .dew/docs` to create the artifact directory.
+2. **Archive previous cycle** (if `.dew/state.md` exists):
+   - Read `.dew/state.md` to get the previous project name (from the `Project:` field).
+   - Generate archive name: `YYMMDD-<previous-project-name>` (e.g., `260511-retina-pipeline`).
+   - Move current cycle files into the archive: `mkdir -p .dew/YYMMDD-<name> && mv .dew/docs .dew/state.md .dew/context.md .dew/graph.json .dew/metacog .dew/design-verification .dew/YYMMDD-<name>/ 2>/dev/null`
+   - This preserves prior work in `.dew/` while starting fresh.
 
-3. Write `.dew/state.md` using the appropriate State File Format at the bottom of this file (full or fast).
+3. Run `mkdir -p .dew/docs` to create the artifact directory.
 
-4. If in a git repo, commit the state file:
+4. Write `.dew/state.md` using the appropriate State File Format at the bottom of this file (full or fast).
+
+5. If in a git repo, commit the state file:
    - Message: `dew(init): begin dew for <project-name>`
 
-5. Set active stage to `discover` (full workflow) or `plan` (fast workflow) and enter the stage (Step 3).
+6. Set active stage to `discover` (full workflow) or `plan` (fast workflow) and enter the stage (Step 3).
 
 ---
 

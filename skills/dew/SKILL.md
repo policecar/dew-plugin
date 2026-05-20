@@ -48,6 +48,10 @@ description: dew workflow orchestrator. Manages the full six-stage process (Disc
 
 !`git status --short 2>/dev/null || echo "(not a git repository — commits will be skipped)"`
 
+## Worktree Policy
+
+Work in a git worktree during dew cycles — never commit dew work directly on main. Create worktrees at `<repo>/.worktrees/<project-name>` (e.g., `.worktrees/retina-pipeline`). This keeps worktrees visible at the repo root and separates feature work from the main branch.
+
 ---
 
 ## Instructions

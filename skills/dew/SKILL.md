@@ -120,7 +120,7 @@ Read the `Active Stage` from the save state. Load context for the stage (read an
 - **build**: Read `.dew/docs/fast-plan.md` and present its contents before invoking the skill.
 - **verify**: Read `.dew/docs/fast-plan.md` and present its contents before invoking the skill.
 
-If the `mcp__dependency-graph__dag_status` tool is available, also call `dag_status` after loading artifacts to show a brief project graph summary (what's done, what's pending across all stage namespaces). This gives the user and the stage skill an instant orientation on overall progress.
+Also attempt to surface a brief project graph summary from the `dependency-graph` MCP server after loading artifacts. The server's tools are deferred and will not appear in your visible tool list even when running, so probe by loading the tool schema via `ToolSearch` with query `select:mcp__dependency-graph__dag_load,mcp__dependency-graph__dag_status` and then calling `dag_load(".dew/graph.json")` followed by `dag_status`. If both calls succeed, include the summary (what's done, what's pending across all stage namespaces) so the user and the stage skill have an instant orientation on overall progress. If the probe fails because the tool itself is unavailable (no `ToolSearch` match, or an MCP-server-unavailable error), silently skip the graph summary.
 
 **After loading context**, briefly tell the user:
 - Which stage we are entering
@@ -245,7 +245,7 @@ When the user invokes `/dew resume`:
 
 2. **Read `.dew/context.md`** and present its contents to the user as a recap: "Here's where we left off:" followed by the snapshot.
 
-3. **Reload the graph** (if `mcp__dependency-graph__dag_status` is available): call `dag_load(".dew/graph.json")` followed by `dag_save(".dew/graph.json", auto_save=true)` to restore and re-enable auto-save. Then call `dag_status` and include a brief graph summary in the recap — which nodes are done, which are in-progress, what is next.
+3. **Reload the graph** (probe-then-act, because the `dependency-graph` MCP server's tools are deferred and not visible in the tool list even when running): load the tool schemas via `ToolSearch` with query `select:mcp__dependency-graph__dag_load,mcp__dependency-graph__dag_save,mcp__dependency-graph__dag_status`, then call `dag_load(".dew/graph.json")` followed by `dag_save(".dew/graph.json", auto_save=true)` to restore and re-enable auto-save, then `dag_status`. If the probe succeeds, include a brief graph summary in the recap — which nodes are done, which are in-progress, what is next. If the probe fails because the tool itself is unavailable (no `ToolSearch` match, or an MCP-server-unavailable error), skip this step silently.
 
 4. **Load the normal stage context** (same as Step 3 — read prerequisite artifacts for the active stage).
 

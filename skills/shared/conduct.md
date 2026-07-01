@@ -16,4 +16,4 @@ When showing any command to the user, always use the short form without the `dew
 
 ## Stage Completion Contract
 
-Stage artifacts are written **by the stage skill itself**, at the stage's conclusion, to the exact path the skill specifies. `/dew done` does not synthesize artifacts — it verifies the artifact exists, updates state, and commits. If you finish a stage conversation, write the artifact file before telling the user to run `/dew done`.
+Stage artifacts are written **by the stage skill itself**, at the stage's conclusion, to the exact path the skill specifies. `/dew done` does not synthesize artifacts — the plugin's `scripts/dew.py` verifies the artifact exists, updates state, and commits, and it refuses to advance past a missing artifact. If you finish a stage conversation, write the artifact file before telling the user to run `/dew done`. Never edit `.dew/state.json` or `.dew/state.md` by hand — the script is their only writer.

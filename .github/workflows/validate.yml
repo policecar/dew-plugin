@@ -66,3 +66,6 @@ jobs:
           test -f skills/shared/conduct.md
           test -f LICENSE
           echo "OK   shared references and LICENSE present"
+
+      - name: Run dew.py self-test
+        run: python3 scripts/test_dew.py

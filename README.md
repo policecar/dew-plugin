@@ -41,6 +41,7 @@ The fast workflow is suited for well-scoped tasks where requirements and approac
 ### Requirements
 
 - [Claude Code](https://github.com/anthropics/claude-code) v2.0 or later. The plugin relies on recent harness features: `ToolSearch`-based deferred tool loading (used to probe for the optional dependency-graph MCP) and agent-type hooks (used for the rigor hooks). On older versions the workflow still runs, but graph tracking and the rigor hooks silently do nothing.
+- `python3` on the PATH — the workflow mechanics (state transitions, artifact checks, commits) are executed by `scripts/dew.py` (stdlib only, no dependencies).
 
 ### Install from GitHub
 
@@ -69,7 +70,7 @@ All commands can be prefixed with the namespace `/dew:`, but the search in claud
 /dew new
 ```
 
-The orchestrator asks for a project name, type, and whether to use the **full** (6-stage) or **fast** (3-stage) workflow, then creates the state file and drops you into the first stage.
+The orchestrator asks for a project name, type, whether to use the **full** (6-stage) or **fast** (3-stage) workflow, and how to handle branching (worktree, feature branch, or stay put), then initializes state via the mechanics script and drops you into the first stage. Previous cycles are archived automatically.
 
 ### Continue from where you left off
 
@@ -176,6 +177,8 @@ Field observation from past cycles: models tuned toward eager helpfulness tend t
 
 **Honest retrospectives.** The Debrief stage writes findings back into the skill configurations themselves, so the process improves with every cycle.
 
+**Code for control flow, model for judgment.** State transitions, artifact-existence checks, archiving, and git commits are executed by `scripts/dew.py`, not interpreted from prose — the model cannot drift on mechanics it never performs. The skills carry only what genuinely needs a model: the conversations, the syntheses, the judgment calls.
+
 **Loose coupling.** Functional interfaces over OOP. Flat data structures over pointer-chasing. Generic programming over inheritance.
 
 ---
@@ -200,8 +203,11 @@ skills/
   shared/
     dag-integration.md    — shared MCP probe and session-start protocol
     conduct.md            — shared conduct rules for all stage skills
+scripts/
+  dew.py                 — workflow mechanics: state, artifact checks, commits
+  test_dew.py            — end-to-end self-test for dew.py (run by CI)
 .github/workflows/
-  validate.yml           — CI: manifests parse, skill frontmatter well-formed
+  validate.yml           — CI: manifests parse, frontmatter well-formed, dew.py self-test
 LICENSE
 README.md
 ```
@@ -210,17 +216,20 @@ README.md
 
 ## Project State
 
-The workflow maintains `.dew/state.md` in your project repository, tracking:
+Workflow state lives in `.dew/state.json` (canonical, written only by `scripts/dew.py`) with `.dew/state.md` regenerated alongside it as a human-readable, git-diffable view. Together they track:
 - Current active stage and status
 - Artifact completion status
 - Stage log with visit counts and dates
 - Backtrack log with reasons
 
+Neither file should be edited by hand — every transition goes through the script, which also enforces that a stage cannot complete without its artifact and that dew commits stay off the default branch (unless you explicitly chose to stay there).
+
 All dew files live under `.dew/` in your project:
 
 ```
 .dew/
-  state.md                          — workflow state (full or fast)
+  state.json                        — canonical workflow state (script-owned)
+  state.md                          — rendered state view (script-owned)
   graph.json                        — dependency graph (if MCP is active)
   context.md                        — pause snapshot (present only when paused)
   docs/
@@ -234,7 +243,7 @@ All dew files live under `.dew/` in your project:
     <test programs>
 ```
 
-Every state transition is committed to git, giving you a full audit trail of the development cycle.
+Every stage boundary (init, done, backtrack, pause) is committed to git, giving you a full audit trail of the development cycle.
 
 ---
 

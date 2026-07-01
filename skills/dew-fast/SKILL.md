@@ -265,7 +265,9 @@ When complete, the user invokes `/dew done` to finalize the cycle.
 
 ## DAG Integration
 
-**Availability check**: If `mcp__dependency-graph__dag_status` is in your available tools, follow all steps in this section. If it is not available, skip the entire section.
+**Availability check**: The `dependency-graph` MCP server's tools are deferred — they will not appear in your visible tool list even when the server is running, so you cannot detect availability by inspecting the tool list. To probe, first load the probe tool schema via `ToolSearch` with query `select:mcp__dependency-graph__dag_load`, then attempt to call `mcp__dependency-graph__dag_load(".dew/graph.json")`. Interpret the result as follows:
+- **Success** (graph loaded, or a file-not-found / empty-graph response from the file layer — which is the expected first-run case): the MCP is available. Follow all steps in this section. Use `ToolSearch` to load any other `mcp__dependency-graph__dag_*` tool schemas as you need them.
+- **Tool-unavailable failure** (`ToolSearch` returns no match for the probe, or the call returns an MCP-server-unavailable error): skip the entire section.
 
 ### At Phase Start
 

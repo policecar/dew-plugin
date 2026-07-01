@@ -36,7 +36,7 @@ description: dew workflow orchestrator. Manages the full six-stage process (Disc
 - `/dew back <stage>` — backtrack to an earlier stage
 - `/dew-<stage-name>` — jump to a named stage (dew-discover / dew-design / dew-demonstrate / dew-develop / dew-document / dew-debrief / dew-fast)
 
-**Command presentation**: When showing any command to the user, always use the short form without the `dew:` namespace prefix (e.g., `/dew done`, NEVER(!) `/dew:dew done`). The namespace prefix is an internal Claude Code routing detail and must not be shown to users.
+**Shared conduct**: All dew skills follow the rules in `${CLAUDE_PLUGIN_ROOT}/skills/shared/conduct.md`. In particular: when showing any command to the user, always use the short form without the `dew:` namespace prefix (e.g., `/dew done`, never `/dew:dew done`) — the prefix is an internal routing detail.
 
 ---
 
@@ -50,11 +50,17 @@ description: dew workflow orchestrator. Manages the full six-stage process (Disc
 
 ## Commit Mode
 
-!`grep -qE '^\.dew/?$|^/\.dew/?$' .gitignore 2>/dev/null && echo "COMMIT_MODE: skip — .dew is gitignored (artifacts are ephemeral)" || git rev-parse --git-dir >/dev/null 2>&1 && echo "COMMIT_MODE: enabled — .dew artifacts will be committed at stage boundaries" || echo "COMMIT_MODE: skip — not a git repository"`
+!`grep -qE '^(\*\*/)?/?\.dew(/\*{0,2})?/?$' .gitignore 2>/dev/null && echo "COMMIT_MODE: skip — .dew is gitignored (artifacts are ephemeral)" || git rev-parse --git-dir >/dev/null 2>&1 && echo "COMMIT_MODE: enabled — .dew artifacts will be committed at stage boundaries" || echo "COMMIT_MODE: skip — not a git repository"`
 
 ## Worktree Policy
 
-Work in a git worktree during dew cycles — never commit dew work directly on main. Create worktrees at `<repo>/.worktrees/<project-name>` (e.g., `.worktrees/retina-pipeline`). This keeps worktrees visible at the repo root and separates feature work from the main branch.
+dew work should not land directly on the repository's default branch. This policy is enforced during Initialize (Step 2), where you offer the user one of three options:
+
+- **Worktree** (recommended for larger cycles): create it at `<repo>/.worktrees/<project-name>` on a new branch `dew/<project-name>` via `git worktree add .worktrees/<project-name> -b dew/<project-name>`. **Caveat you must state explicitly**: `.dew/` state lives inside the checkout it was created in, so the user must run Claude Code from within the worktree directory for `/dew` to find the project state. After creating the worktree, tell the user to restart Claude inside it and re-run `/dew new`, then stop.
+- **Feature branch** in the current checkout: `git checkout -b dew/<project-name>`, then continue initialization here.
+- **Stay on the current branch**: only if the user explicitly chooses this. Record the choice in the state file's Notes.
+
+Before any dew commit, check the current branch. If it is the default branch (main/master) and the user has not explicitly opted to commit there, ask before committing.
 
 ---
 
@@ -84,26 +90,30 @@ Arguments provided: `$ARGUMENTS`
    - "Is this a **new project**, a **major new feature** in an existing codebase, or a **revisit/fix** of something in progress?"
    - "**Full workflow** (6 stages: Discover → Design → Demonstrate → Develop → Document → Debrief) or **Fast workflow** (3 stages: Plan → Build → Verify)? The fast workflow suits well-scoped tasks where the requirements and approach are fairly clear. The full workflow suits larger or more complex projects where thorough exploration and empirical validation are worth the investment."
 
-2. **Archive previous cycle** (if `.dew/state.md` exists):
+2. **Branch / worktree setup** (see Worktree Policy above): offer worktree, feature branch, or stay-put. Act on the user's choice. If a worktree was created, instruct the user to restart Claude inside it and stop here — the remaining steps run in the worktree session.
+
+3. **Archive previous cycle** (if `.dew/state.md` exists):
    - Read `.dew/state.md` to get the previous project name (from the `Project:` field).
    - Generate archive name: `YYMMDD-<previous-project-name>` (e.g., `260511-retina-pipeline`).
-   - Move current cycle files into the archive: `mkdir -p .dew/YYMMDD-<name> && mv .dew/docs .dew/state.md .dew/context.md .dew/graph.json .dew/metacog .dew/design-verification .dew/YYMMDD-<name>/ 2>/dev/null`
+   - Move current cycle files into the archive: `mkdir -p .dew/YYMMDD-<name> && mv .dew/docs .dew/state.md .dew/context.md .dew/graph.json .dew/design-verification .dew/YYMMDD-<name>/ 2>/dev/null`
    - This preserves prior work in `.dew/` while starting fresh.
 
-3. Run `mkdir -p .dew/docs` to create the artifact directory.
+4. Run `mkdir -p .dew/docs` to create the artifact directory.
 
-4. Write `.dew/state.md` using the appropriate State File Format at the bottom of this file (full or fast).
+5. Write `.dew/state.md` using the appropriate State File Format at the bottom of this file (full or fast).
 
-5. **Commit** (if COMMIT_MODE is enabled):
+6. **Commit** (if COMMIT_MODE is enabled):
    - Message: `dew(init): begin dew for <project-name>`
 
-6. Set active stage to `discover` (full workflow) or `plan` (fast workflow) and enter the stage (Step 3).
+7. Set active stage to `discover` (full workflow) or `plan` (fast workflow) and enter the stage (Step 3).
 
 ---
 
 ### Step 3 — Enter Stage
 
 Read the `Active Stage` from the save state. Load context for the stage (read any prerequisite artifacts). Then invoke the appropriate stage skill using the Skill tool.
+
+**If entering via an explicit stage argument (jump)**: when the requested stage differs from the state file's `Active Stage`, update the state file first — set `Active Stage` to the target, set its Stage Log status to `in-progress`, and increment its visit count — so state matches reality. (To return to an *earlier* stage, prefer the Backtrack Protocol so the reason is recorded.)
 
 **Context loading per stage:**
 
@@ -120,7 +130,7 @@ Read the `Active Stage` from the save state. Load context for the stage (read an
 - **build**: Read `.dew/docs/fast-plan.md` and present its contents before invoking the skill.
 - **verify**: Read `.dew/docs/fast-plan.md` and present its contents before invoking the skill.
 
-Also attempt to surface a brief project graph summary from the `dependency-graph` MCP server after loading artifacts. The server's tools are deferred and will not appear in your visible tool list even when running, so probe by loading the tool schema via `ToolSearch` with query `select:mcp__dependency-graph__dag_load,mcp__dependency-graph__dag_status` and then calling `dag_load(".dew/graph.json")` followed by `dag_status`. If both calls succeed, include the summary (what's done, what's pending across all stage namespaces) so the user and the stage skill have an instant orientation on overall progress. If the probe fails because the tool itself is unavailable (no `ToolSearch` match, or an MCP-server-unavailable error), silently skip the graph summary.
+Also attempt to surface a brief project graph summary after loading artifacts, following the availability probe in `${CLAUDE_PLUGIN_ROOT}/skills/shared/dag-integration.md`: probe, then `dag_load(".dew/graph.json")` followed by `dag_status`. On success, include the summary (what's done, what's pending across all stage namespaces) so the user and the stage skill have an instant orientation on overall progress. On tool-unavailable failure, silently skip the graph summary.
 
 **After loading context**, briefly tell the user:
 - Which stage we are entering
@@ -150,30 +160,32 @@ Then invoke the stage skill via the Skill tool:
 
 When the user invokes `/dew done`:
 
-1. **Write the stage artifact** by synthesizing the conversation:
+1. **Verify the stage artifact exists** — the stage skill writes its own artifact at the stage's conclusion; `/dew done` does not synthesize one:
 
    *Full workflow:*
-   - discover → write `.dew/docs/01-discover.md`
-   - design → write `.dew/docs/02-design.md`
-   - demonstrate → finalize `.dew/design-verification/DESIGN_VERIFICATION.md` (test programs were written during the stage)
-   - develop → no additional artifact; code is already in the repo
-   - document → finalize the Hugo site files
-   - debrief → write `.dew/docs/06-debrief.md`
+   - discover → `.dew/docs/01-discover.md`
+   - design → `.dew/docs/02-design.md`
+   - demonstrate → `.dew/design-verification/DESIGN_VERIFICATION.md` (plus test programs written during the stage)
+   - develop → no artifact file; the code in the repo is the artifact
+   - document → the Hugo site files under `docs/`
+   - debrief → `.dew/docs/06-debrief.md`
 
    *Fast workflow:*
-   - plan → write `.dew/docs/fast-plan.md`
-   - build → no additional artifact; code is already in the repo
-   - verify → write `.dew/docs/fast-debrief.md`
+   - plan → `.dew/docs/fast-plan.md`
+   - build → no artifact file; the code in the repo is the artifact
+   - verify → `.dew/docs/fast-debrief.md`
+
+   If the expected artifact file is missing or clearly incomplete, do **not** reconstruct it from memory — tell the user the stage skill has not written its artifact yet, and offer to return to the stage conversation to finish it. Only if the stage conversation happened in the current session and its conclusions are fully present in context may you write the artifact now, and say explicitly that you are doing so.
 
 2. **Update `.dew/state.md`**:
-   - Mark the completed stage with today's date
+   - Set the completed stage's Stage Log status to `complete` with today's date
    - Advance `Active Stage` to the next stage:
      - Full workflow: discover→design→demonstrate→develop→document→debrief→complete
      - Fast workflow: plan→build→verify→complete
    - Mark the artifact as complete in the Artifacts table
 
 3. **Commit** (if COMMIT_MODE is enabled):
-   - Stage `.dew/state.md`, `.dew/graph.json` (if it exists), and any new/changed files in `.dew/docs/` or `.dew/design-verification/`
+   - Stage `.dew/state.md`, `.dew/graph.json` (if it exists), any new/changed files in `.dew/docs/` or `.dew/design-verification/`, and any pending deletion of `.dew/context.md` (left by a `/dew resume` — check `git status`)
    - Message: `dew(<stage>): complete <stage-name> for <project-name>`
    - Example: `dew(discover): complete discovery for retina-pipeline`
    - Do **not** push unless explicitly asked
@@ -195,7 +207,7 @@ When the user invokes `/dew back <stage>`:
 2. Update `.dew/state.md`:
    - Add an entry to the Backtrack Log
    - Set `Active Stage` to the target stage
-   - Mark all intermediate stages as `needs-revisit`
+   - Set the target stage's Stage Log status to `in-progress` and mark all intermediate stages (between the target and where we came from) as `needs-revisit` in the Stage Log's Status column
 
 3. **Commit** (if COMMIT_MODE is enabled):
    - Message: `dew(backtrack): return to <stage> — <brief reason>`
@@ -245,13 +257,13 @@ When the user invokes `/dew resume`:
 
 2. **Read `.dew/context.md`** and present its contents to the user as a recap: "Here's where we left off:" followed by the snapshot.
 
-3. **Reload the graph** (probe-then-act, because the `dependency-graph` MCP server's tools are deferred and not visible in the tool list even when running): load the tool schemas via `ToolSearch` with query `select:mcp__dependency-graph__dag_load,mcp__dependency-graph__dag_save,mcp__dependency-graph__dag_status`, then call `dag_load(".dew/graph.json")` followed by `dag_save(".dew/graph.json", auto_save=true)` to restore and re-enable auto-save, then `dag_status`. If the probe succeeds, include a brief graph summary in the recap — which nodes are done, which are in-progress, what is next. If the probe fails because the tool itself is unavailable (no `ToolSearch` match, or an MCP-server-unavailable error), skip this step silently.
+3. **Reload the graph**, following the availability probe and session-start protocol in `${CLAUDE_PLUGIN_ROOT}/skills/shared/dag-integration.md` (`dag_load`, re-enable auto-save via `dag_save(".dew/graph.json", auto_save=true)`, then `dag_status`). On success, include a brief graph summary in the recap — which nodes are done, which are in-progress, what is next. On tool-unavailable failure, skip this step silently.
 
 4. **Load the normal stage context** (same as Step 3 — read prerequisite artifacts for the active stage).
 
 5. **Invoke the stage skill**, prepending both the context snapshot and the graph status so the skill has full awareness of prior progress. The stage skill's own DAG Integration section will then take over, using `dag_next` to resume from the correct point.
 
-6. **Delete `.dew/context.md`** after the stage skill is successfully invoked (the context is now live in the conversation). Do **not** commit the deletion — it will be cleaned up by the next `/dew done` or `/dew pause` commit.
+6. **Delete `.dew/context.md`** after the stage skill is successfully invoked (the context is now live in the conversation). Do not make a dedicated commit for the deletion — the next `/dew done` commit stages it explicitly (see Step 4), and a `/dew pause` overwrites the file with a fresh snapshot. The deletion must end up committed either way; never leave a consumed snapshot checked in.
 
 ---
 
@@ -326,14 +338,15 @@ Then stop — do not invoke any stage skill.
 | Debrief | .dew/docs/06-debrief.md | pending |
 
 ## Stage Log
-| Stage | Started | Completed | Visits | Notes |
-|-------|---------|-----------|--------|-------|
-| discover | — | — | 0 | |
-| design | — | — | 0 | |
-| demonstrate | — | — | 0 | |
-| develop | — | — | 0 | |
-| document | — | — | 0 | |
-| debrief | — | — | 0 | |
+<!-- Status: pending | in-progress | complete | needs-revisit -->
+| Stage | Status | Started | Completed | Visits | Notes |
+|-------|--------|---------|-----------|--------|-------|
+| discover | pending | — | — | 0 | |
+| design | pending | — | — | 0 | |
+| demonstrate | pending | — | — | 0 | |
+| develop | pending | — | — | 0 | |
+| document | pending | — | — | 0 | |
+| debrief | pending | — | — | 0 | |
 
 ## Backtrack Log
 <!-- Format: | <date> | from: <stage> → to: <stage> | reason: <why> | resolved: yes/no | -->
@@ -366,11 +379,12 @@ Then stop — do not invoke any stage skill.
 | Verify | .dew/docs/fast-debrief.md | pending |
 
 ## Stage Log
-| Stage | Started | Completed | Visits | Notes |
-|-------|---------|-----------|--------|-------|
-| plan | — | — | 0 | |
-| build | — | — | 0 | |
-| verify | — | — | 0 | |
+<!-- Status: pending | in-progress | complete | needs-revisit -->
+| Stage | Status | Started | Completed | Visits | Notes |
+|-------|--------|---------|-----------|--------|-------|
+| plan | pending | — | — | 0 | |
+| build | pending | — | — | 0 | |
+| verify | pending | — | — | 0 | |
 
 ## Backtrack Log
 <!-- Format: | <date> | from: <stage> → to: <stage> | reason: <why> | resolved: yes/no | -->

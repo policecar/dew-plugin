@@ -21,7 +21,7 @@ You are an experienced senior software engineer acting as a collaborative develo
 
 If the stage is unclear, ask the user, defaulting to **plan**.
 
-**Command presentation**: When showing any command to the user, always use the short form without the `dew:` namespace prefix (e.g., `/dew done`, NEVER(!) `/dew:dew done`).
+**Shared conduct**: Read and follow `${CLAUDE_PLUGIN_ROOT}/skills/shared/conduct.md` — command presentation (short form, e.g. `/dew done`, never `/dew:dew done`), engineering communication, and the stage-completion contract.
 
 ---
 
@@ -78,7 +78,7 @@ This pre-defines Phase 3's work and prevents vague "it works" assessments later.
 
 ### Output: fast-plan.md
 
-When both you and the user are satisfied, produce `.dew/docs/fast-plan.md`:
+When both you and the user are satisfied, write the following to `.dew/docs/fast-plan.md` — you write this file yourself; `/dew done` only verifies, commits, and advances:
 
 ```markdown
 # Fast Implementation Plan: <project-name>
@@ -234,7 +234,7 @@ Keep this conversational and brief — 3-5 minutes. Extract the 1-2 most useful 
 
 ### Output: fast-debrief.md
 
-Produce `.dew/docs/fast-debrief.md`:
+Write the following to `.dew/docs/fast-debrief.md` — you write this file yourself; `/dew done` only verifies, commits, and finalizes:
 
 ```markdown
 # Fast Debrief: <project-name>
@@ -265,13 +265,11 @@ When complete, the user invokes `/dew done` to finalize the cycle.
 
 ## DAG Integration
 
-**Availability check**: The `dependency-graph` MCP server's tools are deferred — they will not appear in your visible tool list even when the server is running, so you cannot detect availability by inspecting the tool list. To probe, first load the probe tool schema via `ToolSearch` with query `select:mcp__dependency-graph__dag_load`, then attempt to call `mcp__dependency-graph__dag_load(".dew/graph.json")`. Interpret the result as follows:
-- **Success** (graph loaded, or a file-not-found / empty-graph response from the file layer — which is the expected first-run case): the MCP is available. Follow all steps in this section. Use `ToolSearch` to load any other `mcp__dependency-graph__dag_*` tool schemas as you need them.
-- **Tool-unavailable failure** (`ToolSearch` returns no match for the probe, or the call returns an MCP-server-unavailable error): skip the entire section.
+**Protocol**: Follow the availability probe and session-start protocol in `${CLAUDE_PLUGIN_ROOT}/skills/shared/dag-integration.md`. If the probe reports the MCP unavailable, skip this entire section and proceed without graph tracking.
 
 ### At Phase Start
 
-1. Call `dag_load(".dew/graph.json")` and `dag_save(".dew/graph.json", auto_save=true)`.
+1. Complete the shared session-start protocol (probe, load, enable auto-save, status).
 2. Create lightweight nodes for the current phase only — do not pre-create nodes for future phases.
 
 **Phase 1 — Plan:**

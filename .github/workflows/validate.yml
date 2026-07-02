@@ -1,0 +1,71 @@
+name: validate
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate JSON manifests
+        run: |
+          python3 - <<'EOF'
+          import json, sys
+
+          files = [
+              ".claude-plugin/plugin.json",
+              ".claude-plugin/marketplace.json",
+              "hooks/hooks.json",
+          ]
+          ok = True
+          for f in files:
+              try:
+                  with open(f) as fh:
+                      json.load(fh)
+                  print(f"OK   {f}")
+              except Exception as e:
+                  print(f"FAIL {f}: {e}")
+                  ok = False
+          sys.exit(0 if ok else 1)
+          EOF
+
+      - name: Validate skill frontmatter
+        run: |
+          python3 - <<'EOF'
+          import glob, re, sys
+
+          ok = True
+          paths = sorted(glob.glob("skills/*/SKILL.md"))
+          if not paths:
+              print("FAIL: no skills found under skills/*/SKILL.md")
+              sys.exit(1)
+          for path in paths:
+              with open(path) as fh:
+                  text = fh.read()
+              m = re.match(r"^---\n(.*?)\n---\n", text, re.S)
+              if not m:
+                  print(f"FAIL {path}: missing frontmatter block")
+                  ok = False
+                  continue
+              fm = m.group(1)
+              missing = [k for k in ("name", "description") if not re.search(rf"^{k}:\s*\S", fm, re.M)]
+              if missing:
+                  print(f"FAIL {path}: missing frontmatter field(s): {missing}")
+                  ok = False
+              else:
+                  print(f"OK   {path}")
+          sys.exit(0 if ok else 1)
+          EOF
+
+      - name: Check shared references exist
+        run: |
+          test -f skills/shared/dag-integration.md
+          test -f skills/shared/conduct.md
+          test -f LICENSE
+          echo "OK   shared references and LICENSE present"
+
+      - name: Run dew.py self-test
+        run: python3 scripts/test_dew.py

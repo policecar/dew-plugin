@@ -1,6 +1,6 @@
 # dew — A Structured Engineering Workflow for Claude Code
 
-**dew** (formally known as 6D, new name thanks to [github.com/policecar](https://github.com/policecar) ) is a Claude Code plugin implementing a rigorous, six-stage software development process. Each stage is an interactive conversation with a specialized AI assistant, producing a concrete artifact that feeds the next stage. The workflow enforces engineering discipline: explicit assumptions, measurable goals, empirical validation before implementation, and structured retrospectives.
+**dew** (formerly known as 6D, new name thanks to [github.com/policecar](https://github.com/policecar) ) is a Claude Code plugin implementing a rigorous, six-stage software development process. Each stage is an interactive conversation with a specialized AI assistant, producing a concrete artifact that feeds the next stage. The workflow enforces engineering discipline: explicit assumptions, measurable goals, empirical validation before implementation, and structured retrospectives.
 
 dew offers two workflows depending on task size:
 
@@ -16,7 +16,7 @@ Fast:  Plan → Build → Verify
 | # | Stage | What Happens | Artifact |
 |---|-------|-------------|----------|
 | 1 | **Discover** | Deep problem domain exploration. Surfaces assumptions, defines measurable success criteria, maps constraints and stakeholders. No implementation talk. | `.dew/docs/01-discover.md` |
-| 2 | **Design** | Hardware-aware implementation design. Data layouts, compute kernels, module structure — driven by the hardware's capabilities, not the problem's semantics. | `.dew/docs/02-design.md` |
+| 2 | **Design** | Implementation design driven by negotiated priorities. Coarse-to-fine Socratic dialogue: architecture, data layouts, module structure — evaluated against what this project actually values (with hardware realities dominating when performance is a priority). | `.dew/docs/02-design.md` |
 | 3 | **Demonstrate** | Empirical validation of critical design assumptions. Minimal isolated test programs, measured against theoretical hardware limits. Failures caught here, not in production. | `.dew/design-verification/DESIGN_VERIFICATION.md` |
 | 4 | **Develop** | Production code implementation. Structure defined and agreed before a single line is written. Incremental validation throughout. | (codebase) |
 | 5 | **Document** | Developer-facing Hugo documentation site. Synthesizes all upstream artifacts into architecture docs, design decisions, internals, and codebase map. | `docs/` Hugo site |
@@ -40,13 +40,14 @@ The fast workflow is suited for well-scoped tasks where requirements and approac
 
 ### Requirements
 
-- [Claude Code](https://github.com/anthropics/claude-code) CLI v1.0.33 or later
+- [Claude Code](https://github.com/anthropics/claude-code) v2.0 or later. The plugin relies on recent harness features: `ToolSearch`-based deferred tool loading (used to probe for the optional dependency-graph MCP) and agent-type hooks (used for the rigor hooks). On older versions the workflow still runs, but graph tracking and the rigor hooks silently do nothing.
+- `python3` on the PATH — the workflow mechanics (state transitions, artifact checks, commits) are executed by `scripts/dew.py` (stdlib only, no dependencies).
 
 ### Install from GitHub
 
 ```
-/plugin marketplace add jkerdels/dew-plugin
-/plugin install dew@jkerdels
+/plugin marketplace add policecar/dew-plugin
+/plugin install dew@policecar
 
 restart claude
 ```
@@ -69,7 +70,7 @@ All commands can be prefixed with the namespace `/dew:`, but the search in claud
 /dew new
 ```
 
-The orchestrator asks for a project name, type, and whether to use the **full** (6-stage) or **fast** (3-stage) workflow, then creates the state file and drops you into the first stage.
+The orchestrator asks for a project name, type, whether to use the **full** (6-stage) or **fast** (3-stage) workflow, and how to handle branching (worktree, feature branch, or stay put), then initializes state via the mechanics script and drops you into the first stage. Previous cycles are archived automatically.
 
 ### Continue from where you left off
 
@@ -89,7 +90,7 @@ The orchestrator asks for a project name, type, and whether to use the **full** 
 /dew done
 ```
 
-Writes the stage artifact, commits it to git, and prompts you to `/clear` before the next stage (each stage runs with a clean context window).
+Verifies the stage artifact (which the stage skill wrote at the stage's conclusion), updates state, commits to git, and prompts you to `/clear` before the next stage (each stage runs with a clean context window).
 
 ### Pause mid-stage and resume later
 
@@ -150,9 +151,17 @@ This gives the project a single, growing dependency graph that spans the entire 
 
 ### Installation
 
-Follow the setup instructions at [dependency-graph-mcp](https://github.com/jkerdels/dependency-graph-mcp). Once the MCP server is registered in Claude Code, dew detects it automatically.
+Follow the setup instructions at [dependency-graph-mcp](https://github.com/jkerdels/dependency-graph-mcp). **The server must be registered under the name `dependency-graph`** — the plugin probes for tools named `mcp__dependency-graph__*`, and the rigor hooks in `hooks/hooks.json` match on those names. Under any other registration name, dew will treat the MCP as absent and the hooks will never fire. Once registered correctly, dew detects it automatically.
 
 The graph is persisted at `.dew/graph.json` in your project repository and committed alongside other artifacts at each stage transition and pause.
+
+### Rigor hooks
+
+When the graph is active, `hooks/hooks.json` adds PreToolUse review agents on `dag_done`, `dag_done_batch`, and `dag_delete_node`. Completion summaries that make verifiable engineering claims ("tests pass", "component implemented") are checked against the actual state of the codebase before the node is marked done; summaries that merely record conversation outcomes get a lightweight vagueness check only. Node deletions are reviewed for scope erosion.
+
+### Model choice
+
+Field observation from past cycles: models tuned toward eager helpfulness tend to manufacture verification items in the Demonstrate stage to signal thoroughness. The skill's citation-discipline rule and "nothing to verify" exit path mitigate this at the prompt level, but model behavior is an independent variable — if you observe scope inflation in Demonstrate, switching that stage to a more task-focused model helps.
 
 ---
 
@@ -162,13 +171,15 @@ The graph is persisted at `.dew/graph.json` in your project repository and commi
 
 **Measure, never guess.** Goals must be quantifiable. Performance claims must be benchmarked against hardware limits. "Fast" is not a result; "23 ms at 67% of theoretical peak" is.
 
-**Hardware drives structure.** The Design stage shapes code around what CPUs and memory hierarchies can do efficiently — not around domain semantics or class hierarchies.
+**Negotiated perspectives drive structure.** The Design stage begins by negotiating what this project actually values — performance, readability, pedagogical clarity, extensibility — and every decision is evaluated against those priorities. When performance is among them, hardware realities (cache behavior, memory layout, what CPUs do efficiently) dominate the design rather than domain semantics or class hierarchies.
 
 **Validate before implementing.** The Demonstrate stage exists specifically to catch design flaws before they are baked into production code.
 
 **Honest retrospectives.** The Debrief stage writes findings back into the skill configurations themselves, so the process improves with every cycle.
 
-**Loose coupling.** Functional interfaces over OOP. Flat data structures over pointer-chasing. Templates over inheritance.
+**Code for control flow, model for judgment.** State transitions, artifact-existence checks, archiving, and git commits are executed by `scripts/dew.py`, not interpreted from prose — the model cannot drift on mechanics it never performs. The skills carry only what genuinely needs a model: the conversations, the syntheses, the judgment calls.
+
+**Loose coupling.** Functional interfaces over OOP. Flat data structures over pointer-chasing. Generic programming over inheritance.
 
 ---
 
@@ -177,15 +188,27 @@ The graph is persisted at `.dew/graph.json` in your project repository and commi
 ```
 .claude-plugin/
   plugin.json            — plugin manifest (name, version, description)
+  marketplace.json       — marketplace listing
+hooks/
+  hooks.json             — rigor hooks: review of DAG completion claims and deletions
 skills/
   dew/                    — orchestrator: state, context loading, stage transitions (full + fast)
   dew-discover/           — domain exploration and planning
-  dew-design/             — hardware-aware implementation design
+  dew-design/             — implementation design driven by negotiated perspectives
   dew-demonstrate/        — empirical design validation
   dew-develop/            — production code implementation
   dew-document/           — Hugo documentation site generator
   dew-debrief/            — retrospective facilitator
   dew-fast/               — fast workflow: Plan + Build + Verify in one skill
+  shared/
+    dag-integration.md    — shared MCP probe and session-start protocol
+    conduct.md            — shared conduct rules for all stage skills
+scripts/
+  dew.py                 — workflow mechanics: state, artifact checks, commits
+  test_dew.py            — end-to-end self-test for dew.py (run by CI)
+.github/workflows/
+  validate.yml           — CI: manifests parse, frontmatter well-formed, dew.py self-test
+LICENSE
 README.md
 ```
 
@@ -193,17 +216,20 @@ README.md
 
 ## Project State
 
-The workflow maintains `.dew/state.md` in your project repository, tracking:
+Workflow state lives in `.dew/state.json` (canonical, written only by `scripts/dew.py`) with `.dew/state.md` regenerated alongside it as a human-readable, git-diffable view. Together they track:
 - Current active stage and status
 - Artifact completion status
 - Stage log with visit counts and dates
 - Backtrack log with reasons
 
+Neither file should be edited by hand — every transition goes through the script, which also enforces that a stage cannot complete without its artifact and that dew commits stay off the default branch (unless you explicitly chose to stay there).
+
 All dew files live under `.dew/` in your project:
 
 ```
 .dew/
-  state.md                          — workflow state (full or fast)
+  state.json                        — canonical workflow state (script-owned)
+  state.md                          — rendered state view (script-owned)
   graph.json                        — dependency graph (if MCP is active)
   context.md                        — pause snapshot (present only when paused)
   docs/
@@ -217,7 +243,7 @@ All dew files live under `.dew/` in your project:
     <test programs>
 ```
 
-Every state transition is committed to git, giving you a full audit trail of the development cycle.
+Every stage boundary (init, done, backtrack, pause) is committed to git, giving you a full audit trail of the development cycle.
 
 ---
 

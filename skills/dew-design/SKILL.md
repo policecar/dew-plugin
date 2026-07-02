@@ -9,6 +9,8 @@ Your role is to conduct a structured, Socratic dialogue with the user to collabo
 
 **You do not deliver designs. You co-develop them.**
 
+**Shared conduct**: Read and follow `${CLAUDE_PLUGIN_ROOT}/skills/shared/conduct.md` — command presentation, engineering communication, and the stage-completion contract common to all dew stages.
+
 ---
 
 ## Core Philosophy
@@ -37,7 +39,7 @@ Guide the user through the following phases. **Do not rush.** Each phase require
 
 ### Phase 2: Negotiate Design Perspectives
 
-This phase is critical and has no equivalent in v1. Before any design work begins, explicitly discuss:
+This phase is critical. Before any design work begins, explicitly discuss:
 
 - **"What are the most important qualities this implementation must have?"** Examples: performance, code readability, pedagogical clarity, extensibility, minimal complexity, robustness, ease of authoring.
 - Help the user rank these. Push for a clear top-2 or top-3. Ask: "If two of these conflict, which wins?"
@@ -123,7 +125,7 @@ Fill in remaining details:
 
 ## Output Format
 
-At the end of the dialogue (when both you and the user agree that the design is complete), produce a structured **Implementation Design Document** containing:
+At the end of the dialogue (when both you and the user agree that the design is complete), write a structured **Implementation Design Document** to **`.dew/docs/02-design.md`** — you write this file yourself; `/dew done` only verifies, commits, and advances. It must contain:
 
 1. **Problem Summary**: What is being built and why (1-2 paragraphs).
 2. **Design Perspectives**: The negotiated priorities that guided all decisions, with ranking.
@@ -133,29 +135,25 @@ At the end of the dialogue (when both you and the user agree that the design is 
 6. **Module Design**: Function signatures and responsibilities for each module.
 7. **Data Flow Diagram**: How data moves between modules.
 8. **Parallelism Strategy**: Where and how parallelism is introduced (or "None" with justification).
-9. **C++ Feature Plan**: Specific language features used and why.
+9. **Language Feature Plan**: Specific language features used and why, for the project's implementation language.
 10. **Error Handling Strategy**: How errors are handled at each boundary.
 11. **Validation Plan**: Per-component correctness tests and, if applicable, performance benchmarks with theoretical bounds.
 12. **Implementation Order**: Ordered build-and-validate steps.
 13. **Decision Log**: For each significant design decision — what alternatives were considered, what trade-offs were identified, what was chosen and why. This is the reasoning trail that makes the design auditable.
 
-When the document is complete, the user will invoke `/dew done` to trigger artifact saving and stage transition.
+When the document file is written, tell the user to invoke `/dew done` to commit the artifact and advance the stage.
 
 ---
 
 
 ## DAG Integration
 
-**Availability check**: The `dependency-graph` MCP server's tools are deferred — they will not appear in your visible tool list even when the server is running, so you cannot detect availability by inspecting the tool list. To probe, first load the probe tool schema via `ToolSearch` with query `select:mcp__dependency-graph__dag_load`, then attempt to call `mcp__dependency-graph__dag_load(".dew/graph.json")`. Interpret the result as follows:
-- **Success** (graph loaded, or a file-not-found / empty-graph response from the file layer — which is the expected first-run case): the MCP is available. Follow all steps in this section. Use `ToolSearch` to load any other `mcp__dependency-graph__dag_*` tool schemas as you need them.
-- **Tool-unavailable failure** (`ToolSearch` returns no match for the probe, or the call returns an MCP-server-unavailable error): skip the entire section and proceed without graph tracking.
+**Protocol**: Follow the availability probe and session-start protocol in `${CLAUDE_PLUGIN_ROOT}/skills/shared/dag-integration.md`. If the probe reports the MCP unavailable, skip this entire section and proceed without graph tracking.
 
 ### Session Start
 
-1. Call `dag_load(".dew/graph.json")`. The graph will contain `demonstrate.*` seed nodes created by Discover — note them.
-2. Call `dag_save(".dew/graph.json", auto_save=true)` to enable auto-save.
-3. Call `dag_status` to orient yourself. Note any existing `demonstrate.*` nodes — these are assumptions that already need validation and will inform Phase 6 work.
-4. Create own-stage nodes via `dag_create_nodes`:
+1. Complete the shared session-start protocol (probe, load, enable auto-save, status). The graph will contain `demonstrate.*` seed nodes created by Discover — note them; these are assumptions that already need validation and will inform Phase 6 work.
+2. Create own-stage nodes via `dag_create_nodes`:
 
 ```json
 [
@@ -170,9 +168,9 @@ When the document is complete, the user will invoke `/dew done` to trigger artif
 ]
 ```
 
-5. Wire the phase chain via `dag_add_dependencies` (each phase depends on the previous; `design.idd` depends on `design.phase7`).
+3. Wire the phase chain via `dag_add_dependencies` (each phase depends on the previous; `design.idd` depends on `design.phase7`).
 
-6. Use `dag_next` to drive the dialogue. Mark each phase done with a summary of key decisions before proceeding.
+4. Drive the dialogue per the shared Driving Work protocol. Mark each phase done with a summary of key decisions before proceeding.
 
 ### Artifact Condensation
 
@@ -207,8 +205,4 @@ Wire inter-component dependencies if the plan specifies ordering: if component B
 
 ---
 
-## Communication Standards
-
-- **Command presentation**: When showing any command to the user, always use the short form without the `dew:` namespace prefix (e.g., `/dew done`, NEVER(!) `/dew:dew done`). The namespace prefix is an internal Claude Code routing detail and must not be shown to users.
-
-When design is complete and reviewed with the user, they will invoke `/dew done` to trigger stage transition.
+When the design is complete and reviewed with the user, write the IDD to `.dew/docs/02-design.md` (per the Output Format above), then tell the user to invoke `/dew done` to commit it and advance the stage.

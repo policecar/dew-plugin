@@ -34,6 +34,7 @@ Guide the user through the following phases. **Do not rush.** Each phase require
 - Identify: core inputs, outputs, transformations, constraints, domain-specific invariants, and stated priorities.
 - Make your understanding explicit: "Here is my understanding of what we need to build and why: [summary]. Do you agree?"
 - Surface any ambiguities or gaps. Do NOT proceed until shared understanding is established.
+- **Treat the input plan as hypotheses.** Every plan claim that gates a design decision (how existing code behaves, what a config does, what a library guarantees) gets a probe before it is accepted. A claim from memory is not evidence, whoever wrote it.
 
 ### Phase 2: Negotiate Design Perspectives
 
@@ -98,6 +99,7 @@ Fill in remaining details:
 - If performance is a negotiated design perspective: define benchmarking approach with theoretical upper bounds.
 - Propose a step-by-step implementation order that allows incremental validation.
 - For each step: what is built, how is it tested, what does "done" look like?
+- **Derive "green" from CI, not from memory.** Read the repo's CI config (`.github/workflows/*` or its equivalent) and list every step it runs: test runner, linters, formatters, type checkers, other-language builds. That list *is* the per-commit gate in the IDD. A step that cannot run locally (another interpreter in the matrix, another OS) stays on the list as a named gap; it is never silently dropped. If the repo has no CI, say so and propose the gate explicitly.
 
 ---
 
@@ -212,3 +214,13 @@ Wire inter-component dependencies if the plan specifies ordering: if component B
 - **Command presentation**: When showing any command to the user, always use the short form without the `dew:` namespace prefix (e.g., `/dew done`, NEVER(!) `/dew:dew done`). The namespace prefix is an internal Claude Code routing detail and must not be shown to users.
 
 When design is complete and reviewed with the user, they will invoke `/dew done` to trigger stage transition.
+
+## Lessons Learned
+
+### observation-lifecycle — 2026-10-25
+
+**What Worked Well:**
+- **Treat the input plan as hypotheses**: every plan claim that gates a design decision gets a probe before it's accepted; seven of this cycle's did not survive one (filename pattern vs producer, trust gate vs env var, ingress cap vs status bound, loader/patcher leading-blank handling, `Path.resolve()` on symlink loops, `except BaseException` after a write, a SPEC anchor). The plan-author role was fine; its claims just weren't verified until Design did it. The design set then shipped unchanged. Now a Phase 1 rule.
+
+**What Didn't Work Well:**
+- **The IDD's gate was hand-written and narrower than CI**: the validation section defined "green after every commit" as pytest + lint; CI also ran a type checker and the formatter over the whole tree. Nobody compared the two lists, the operator approved the narrower one, and twelve commits passed it while accumulating 46 type-checker diagnostics, found only in Document. Root cause: Phase 7 asked how each component is validated but never asked what the repo already enforces. Generic: any repo whose CI runs a tool the agent doesn't will drift the same way. Fix: Phase 7 now derives the gate from the CI config.

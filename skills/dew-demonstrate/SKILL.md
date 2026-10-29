@@ -254,7 +254,7 @@ Use `dag_next` to get the next actionable sub-task. Work through it in the conve
 ### observation-lifecycle — 2026-10-25
 
 **What Worked Well:**
-- **Empirical check of a failure classifier**: injecting failures at each write step found that the existing classifier was unsafe in 3 of 8 modes before any production code was written; the design was amended and the fix held.
+- **Empirical check of a failure classifier**: injecting failures at each step of a two-phase write found that the planned error classification was unsafe in 3 of 8 modes before any production code was written; the design was amended and the fix held.
 - **Cutting the plan to five checks**: saved roughly a day and lost nothing — every dropped synthetic check reappeared as a develop done-when.
 
 **What Didn't Work Well:**

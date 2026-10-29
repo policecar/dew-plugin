@@ -207,7 +207,7 @@ When documentation is complete and reviewed with the user, they will invoke `/de
 ### observation-lifecycle — 2026-10-25
 
 **What Didn't Work Well:**
-- **Hugo assumed regardless of the repo**: the repo's `docs/` was plain Markdown rendered by GitHub; a parallel Hugo site for one feature would have been a second set of docs to keep in sync. The operator approved a deviation. Root cause: the skill states Hugo as the output, with no check of existing convention. Minor. Fix: one sentence in Inputs.
+- **Hugo assumed regardless of the repo**: the repo's `docs/` was plain Markdown rendered by GitHub; a parallel Hugo site for one feature would have been a second set of docs to keep in sync. The user approved a deviation. Root cause: the skill states Hugo as the output, with no check of existing convention. Minor. Fix: one sentence in Inputs.
 
 **What Worked Well:**
 - **Re-reading from the code, not from the IDD**: Document verifies only when it re-reads from the code, not from the IDD. Both Document-stage defects (Ctrl-C classification, the type-checker gate) were found by writing docs from the shipped code and noticing the two disagreed. Transcribing upstream artifacts would have documented the intended behaviour and found nothing.

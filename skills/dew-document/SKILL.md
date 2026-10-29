@@ -32,7 +32,7 @@ Before writing any documentation, gather and carefully read:
 3. **Demonstrate artifact** (`.dew/design-verification/DESIGN_VERIFICATION.md`): Validated design patterns, rejected alternatives with reasoning, identified risks, performance measurements
 4. **Implemented code**: Actual source files, directory structure, key algorithms, data structures, interfaces, and configuration
 
-Begin by discussing with the user what exists, what is complete, and who the documentation audience is. If any inputs are missing or incomplete, flag this explicitly and state which documentation sections will be incomplete or speculative as a result.
+Begin by discussing with the user what exists, what is complete, and who the documentation audience is. Check the repo's existing documentation convention first (plain Markdown in `docs/`, an existing site generator, a wiki): the Hugo site below is the default for a repo without one, not a replacement for one it already has. If any inputs are missing or incomplete, flag this explicitly and state which documentation sections will be incomplete or speculative as a result.
 
 ---
 
@@ -201,3 +201,13 @@ The documentation itself is not condensed — it must be complete and readable f
 - **Command presentation**: When showing any command to the user, always use the short form without the `dew:` namespace prefix (e.g., `/dew done`, NEVER(!) `/dew:dew done`). The namespace prefix is an internal Claude Code routing detail and must not be shown to users.
 
 When documentation is complete and reviewed with the user, they will invoke `/dew done` to trigger stage transition.
+
+## Lessons Learned
+
+### observation-lifecycle — 2026-10-25
+
+**What Didn't Work Well:**
+- **Hugo assumed regardless of the repo**: the repo's `docs/` was plain Markdown rendered by GitHub; a parallel Hugo site for one feature would have been a second set of docs to keep in sync. The user approved a deviation. Root cause: the skill states Hugo as the output, with no check of existing convention. Minor. Fix: one sentence in Inputs.
+
+**What Worked Well:**
+- **Re-reading from the code, not from the IDD**: Document verifies only when it re-reads from the code, not from the IDD. Both Document-stage defects (Ctrl-C classification, the type-checker gate) were found by writing docs from the shipped code and noticing the two disagreed. Transcribing upstream artifacts would have documented the intended behaviour and found nothing.

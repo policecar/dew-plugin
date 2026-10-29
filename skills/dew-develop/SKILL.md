@@ -54,10 +54,13 @@ Once the structure is approved, execute the implementation faithfully and with c
 - **Follow the structure you defined**: Do not deviate silently. If during implementation you discover a necessary deviation from the agreed structure, pause, explain the deviation, and get confirmation before proceeding.
 - **Code quality**: Write code that is clear, minimal, and correct. Avoid unnecessary abstraction. Prefer functional-style interfaces over OOP where appropriate. Prefer generic/template approaches over inheritance hierarchies.
 - **Loose coupling**: Respect module boundaries. Keep interfaces lightweight. Avoid reaching across layers.
-- **Assumptions as assertions**: Where you have made assumptions about parameter ranges, data validity, or preconditions, encode them as assertions or explicit checks in the code. Make the code self-documenting about its own assumptions.
+- **Assumptions as checks**: Where you have made assumptions about parameter ranges, data validity, or preconditions, encode them as explicit checks in the code. An invariant that must hold in production gets a check that raises a named error, never a language assertion that an optimisation flag can strip (Python `assert` under `-O`, C `assert` under `NDEBUG`). Make the code self-documenting about its own assumptions.
 - **No premature optimization**: Write correct code first. Only optimize if you have identified a concrete performance concern with measurable impact.
 - **Test alignment**: Ensure your implementation satisfies the contracts defined by the existing test implementations. Do not break the test interfaces.
 - **Incremental validation**: If the implementation is large, implement and validate in logical sub-steps. Do not write everything and then test.
+- **The per-commit gate is the IDD's CI-derived list**: run every step on it before each commit, not a hand-picked subset. If the IDD's gate is narrower than the repo's CI config, flag it in Phase 1 and fix the list before writing code.
+- **Exit-path review for invariants**: mutation testing asks "does breaking this turn a test red?"; it does not ask "does the invariant hold on every way out?". For each function that enforces an invariant, list its exits (normal return, early returns, dry-run or preview branches, every raise) and check the invariant on each one. Do this in self-review and in any reviewer prompt for delegated work.
+- **Do and name what the house rules already decide**: if the project's instruction files (CLAUDE.md, AGENTS.md or their equivalent) or the IDD already settle a choice (e.g. fail fast → raise instead of assert; a cleanup already approved once in this cycle), apply it and record it in the commit summary. Escalate only what those documents don't decide: contracts, trust boundaries, scope, cost.
 
 ---
 
@@ -146,3 +149,19 @@ Use `dag_next` to determine which component to work on next — the graph's prio
 - **Command presentation**: When showing any command to the user, always use the short form without the `dew:` namespace prefix (e.g., `/dew done`, NEVER(!) `/dew:dew done`). The namespace prefix is an internal Claude Code routing detail and must not be shown to users.
 
 When development is complete and reviewed with the user, they will invoke `/dew done` to trigger stage transition.
+
+## Lessons Learned
+
+### observation-lifecycle — 2026-10-25
+
+**What Worked Well:**
+- **Per-commit review with the user**: the heavy part of the cycle and where the value was. Escalations about contracts, trust boundaries and scope (a failure-handling contract, an input-validation rule, the cost of delegated workers, keeping an unrelated docs fix out of the PR) were right to raise.
+- **Mutation checks in self-review**: the delegated writer node killed 12 mutations; "does a mutation turn the test red" was well covered.
+
+**What Didn't Work Well:**
+- **Self-review missed invariant violations on secondary exits**: both the worker's and the CCA reviewer's passes missed two defects that only the user's review caught: a validation step missing on a function's dry-run exit path, and a bare `assert` guarding an invariant (gone under `-O`). Root cause: review asked about mutation coverage, not about exits, which is a different question. The `assert` half was also *encouraged* by this skill's own "Assumptions as assertions" bullet. Fix: exit-path review bullet; the assumptions bullet now requires raising checks. The exit-path rule also belongs in dew-metacog's reviewer prompt when that skill reaches main.
+- **The per-commit gate was narrower than CI**: see dew-design's lesson of the same date. Develop ran the IDD's pytest + lint list faithfully for twelve commits; the type checker CI also runs was never in it. Fix: the gate is the CI-derived list, and a gap is flagged in Phase 1.
+- **Re-asking what the project's rules already decided**: bare assert vs raise (the project's instruction file says "fail fast"), and removing dead bindings from tests (approved once, re-asked three commits later). Root cause: no rule distinguishing settled choices from open ones, so the skill's "never make a silent choice" was read as "always ask". Fix: do-and-name rule.
+
+**Open Questions:**
+- The user's own view of stage load and friction was not collected in this debrief (a reviewer's view only). Revisit next cycle.

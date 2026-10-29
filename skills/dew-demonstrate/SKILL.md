@@ -141,6 +141,7 @@ When the document is complete, the user will invoke `/dew done` to trigger artif
 - **Slim margins are red flags** — a mechanism that passes by 2% under ideal conditions is not a validated design; it is a liability. Report tight margins as risks.
 - **Isolate variables** — when comparing alternatives, change only one thing at a time. If the comparison is confounded by multiple variables, the result is meaningless.
 - **Test failure modes** — for every mechanism tested, ask "when does this break?" and probe it. Know the operating envelope.
+- **Multi-step writes get a four-class failure matrix** — when a check verifies a mutation with more than one durable step (file then ledger, row then index, local then remote), its failure-injection matrix covers by default: (1) ordinary exceptions; (2) asynchronous interrupts and non-`Exception` exits (signals, Ctrl-C, `BaseException` in Python); (3) partial writes; (4) a concurrent writer. Each class is either tested or listed as an accepted risk with its reason. This is a standing item, not an invented concern: it applies whenever the IDD has such a mutation.
 
 ---
 
@@ -249,3 +250,15 @@ Use `dag_next` to get the next actionable sub-task. Work through it in the conve
 - Whether the skill should have a formal "nothing to verify" exit path that produces a minimal Design Verification Document explaining why, or whether a conversational recommendation to skip is sufficient. Needs observation.
 
 - **Model selection matters for this stage**: Opus 4.6 exhibits strong "theatrical performance" tendencies — it invents verification items to signal thoroughness rather than staying anchored to the IDD. Opus itself described this as an artifact of overperformance training. Sonnet 4.6 is more task-focused and stays on the work at hand. The citation discipline rule (Finding 2 above) partially mitigates this at the prompt level, but model personality is an independent variable. Sonnet 4.6 is the recommended model for the Demonstrate stage.
+
+### observation-lifecycle — 2026-10-25
+
+**What Worked Well:**
+- **Empirical check of a failure classifier**: injecting failures at each step of a two-phase write found that the planned error classification was unsafe in 3 of 8 modes before any production code was written; the design was amended and the fix held.
+- **Cutting the plan to five checks**: saved roughly a day and lost nothing — every dropped synthetic check reappeared as a develop done-when.
+
+**What Didn't Work Well:**
+- **The failure matrix covered only the classes it was handed**: the two-phase write check injected ordinary exceptions and partial writes. Asynchronous interrupts (Ctrl-C between steps) and a concurrent writer were never in the matrix; the Ctrl-C restore bug surfaced in Document. Root cause: no default taxonomy for multi-step writes, so coverage depended on what the IDD happened to list. Fix: four-class matrix in Engineering Constraints.
+
+**Open Questions:**
+- Branches the live data couldn't exercise (ambiguity, closure) stayed fixture-only. Is a declared coverage-gap section enough, or should Demonstrate seed a synthetic live-like fixture for them?
